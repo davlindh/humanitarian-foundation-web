@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://zjnfgenplhctcgqhiryt.supabase.co';
@@ -5,26 +6,17 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Lightweight hook — assumes a working Supabase client. Individual
+// components handle their own fetch state; this just exposes a
+// consistent { loading, error } shape without probing a table.
 export const useSupabase = () => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Example fetch to check connection
-        const { data, error } = await supabase.from('example_table').select('*');
-        if (error) throw error;
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error.message);
-        setError(error.message);
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    setLoading(false);
+    setError(null);
   }, []);
 
-  return { loading, error };
+  return { loading, error, supabase };
 };
