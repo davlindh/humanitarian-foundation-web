@@ -2,47 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   HUFIDA Design Tokens — Emerald Prestige
+   Palette: #064e3b (emerald 900) / #0d7a5f (emerald 600) / #c9a84c (gold) /
+            #f5f0e0 (parchment)
+   Type:    Archivo Black (display) + Hind (body)
+   ========================================================================== */
+
 :root {
-  --primary-color: #3498db;
-  --secondary-color: #2ecc71;
-  --accent-color: #e74c3c;
-  --background-color: #f4f4f4;
-  --text-color: #333333;
+  --color-emerald-deep: 6 78 59;      /* #064e3b */
+  --color-emerald: 13 122 95;         /* #0d7a5f */
+  --color-emerald-soft: 209 232 222;  /* light tint */
+  --color-gold: 201 168 76;           /* #c9a84c */
+  --color-gold-soft: 240 224 176;
+  --color-parchment: 245 240 224;     /* #f5f0e0 */
+  --color-ink: 20 30 25;
+  --color-ink-soft: 90 96 90;
+  --color-line: 224 217 196;
+  --color-surface: 253 250 240;
 }
 
-body {
-  font-family: 'Roboto', sans-serif;
-  background-color: var(--background-color);
-  color: var(--text-color);
+html, body {
+  background: rgb(var(--color-surface));
+  color: rgb(var(--color-ink));
+  font-family: 'Hind', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 700;
+h1, h2, h3, h4, h5, h6, .display {
+  font-family: 'Archivo Black', 'Hind', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  color: rgb(var(--color-emerald-deep));
 }
 
-.section-padding {
-  padding: 4rem 0;
+.eyebrow {
+  font-family: 'Hind', sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(var(--color-gold));
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
+.rule-gold {
+  height: 3px;
+  width: 3rem;
+  background: rgb(var(--color-gold));
+  border: 0;
+  margin: 0 0 1.25rem;
 }
 
-.btn, a {
-  transition: all 0.3s ease;
+.container-wide { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem; }
+.container-prose { max-width: 68ch; margin: 0 auto; padding: 0 1.25rem; }
+
+.section { padding: 4rem 0; }
+@media (min-width: 768px) { .section { padding: 6rem 0; } }
+
+/* Focus ring */
+:where(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 2px solid rgb(var(--color-gold));
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-.btn:hover, a:hover {
-  transform: translateY(-2px);
-}
-
-.parallax {
-  background-attachment: fixed;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
+/* Prose article */
+.prose-hufida p { margin: 0 0 1.1em; color: rgb(var(--color-ink)); }
+.prose-hufida a { color: rgb(var(--color-emerald)); text-decoration: underline; text-underline-offset: 3px; }
+.prose-hufida h2 { margin-top: 2.5rem; margin-bottom: 1rem; font-size: 1.75rem; }
+.prose-hufida h3 { margin-top: 2rem; margin-bottom: 0.75rem; font-size: 1.25rem; }
