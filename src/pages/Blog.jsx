@@ -1,42 +1,56 @@
 import React from 'react';
+import PageHeader from '../components/PageHeader';
 
-const blogPosts = [
+const posts = [
   {
-    title: 'Empowering Communities through Clean Water',
+    title: 'Empowering communities through clean water',
     date: 'October 10, 2023',
-    excerpt: 'Learn how HUFIDA is providing access to clean and safe drinking water in rural areas.',
-    content: 'Full content about how HUFIDA is providing access to clean and safe drinking water in rural areas. This includes detailed information about the projects, the impact on the communities, and future plans.',
-    image: '/images/blog1.jpg',
+    excerpt: 'How HUFIDA is delivering safe drinking water and long-term operator training in rural regions.',
+    author: 'Field Team',
   },
   {
-    title: 'Educational Programs Making a Difference',
+    title: 'Educational programmes making a difference',
     date: 'September 20, 2023',
-    excerpt: 'Our educational programs are empowering children through education and skill development.',
-    content: 'Full content about our educational programs, including success stories, detailed descriptions of the programs, and the impact on the children and communities.',
-    image: '/images/blog2.jpg',
+    excerpt: 'Five new schools, forty new teachers, and a curriculum built with local communities.',
+    author: 'Programmes Team',
   },
-  // Add more blog posts as needed
+  {
+    title: 'What "long-term" actually means',
+    date: 'August 4, 2023',
+    excerpt: 'Why HUFIDA measures success in decades, not deployment cycles.',
+    author: 'Executive Director',
+  },
 ];
 
-const BlogPage = () => {
-  return (
-    <div className="p-10 bg-base-200 text-center">
-      <h2 className="text-3xl font-bold">Blog</h2>
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {blogPosts.map((post, index) => (
-          <div key={index} className="card bg-base-100 shadow-xl">
-            <figure><img src={post.image} alt={post.title} /></figure>
-            <div className="card-body">
-              <h2 className="card-title">{post.title}</h2>
-              <p className="text-sm text-gray-500">{post.date}</p>
-              <p>{post.excerpt}</p>
-              <button className="btn btn-link">Read More</button>
-            </div>
-          </div>
-        ))}
+const BlogPage = () => (
+  <>
+    <PageHeader
+      eyebrow="Blog"
+      title="Notes from the programme."
+      lead="Longer-form writing from the HUFIDA team on how the work gets done, what we learn, and where we're headed."
+    />
+    <section className="section">
+      <div className="container-wide max-w-5xl">
+        <div className="divide-y divide-line">
+          {posts.map((p) => (
+            <article key={p.title} className="py-10 grid md:grid-cols-[160px_1fr] gap-6">
+              <div className="text-xs uppercase tracking-widest text-ink-soft">
+                <div>{p.date}</div>
+                <div className="mt-1 text-gold font-semibold not-italic">{p.author}</div>
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl mb-3">{p.title}</h2>
+                <p className="text-ink-soft leading-relaxed">{p.excerpt}</p>
+                <button className="mt-4 text-emerald-deep font-semibold underline underline-offset-4">
+                  Read more →
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
-    </div>
-  );
-};
+    </section>
+  </>
+);
 
 export default BlogPage;

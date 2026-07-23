@@ -1,36 +1,42 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-const Footer = () => {
-  return (
-    <footer className="footer p-10 bg-base-200 text-base-content">
-      <div>
-        <span className="footer-title">Contact Us</span>
-        <p>1234 HUFIDA Street, Nairobi, Kenya</p>
-        <p>Email: info@hufida.org</p>
-        <p>Phone: +254 700 000 000</p>
+const Footer = () => (
+  <footer className="bg-emerald-deep text-parchment/90 mt-auto">
+    <div className="container-wide py-14 grid md:grid-cols-4 gap-10">
+      <div className="md:col-span-2">
+        <div className="font-display text-2xl text-parchment">HUFIDA</div>
+        <p className="mt-3 max-w-sm text-sm text-parchment/70 leading-relaxed">
+          Humanitarian Foundation for Integrated Development in Africa. Long-term water,
+          education, and healthcare programmes designed with the communities they serve.
+        </p>
       </div>
       <div>
-        <span className="footer-title">Follow Us</span>
-        <div className="grid grid-flow-col gap-4">
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a>
-          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">Twitter</a>
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
-        </div>
+        <div className="eyebrow text-gold mb-3">Programme</div>
+        <ul className="space-y-2 text-sm">
+          <li><Link to="/projects" className="hover:text-gold">Projects</Link></li>
+          <li><Link to="/news" className="hover:text-gold">News</Link></li>
+          <li><Link to="/blog" className="hover:text-gold">Blog</Link></li>
+          <li><Link to="/partners" className="hover:text-gold">Partners</Link></li>
+        </ul>
       </div>
       <div>
-        <span className="footer-title">Subscribe</span>
-        <form>
-          <input type="email" placeholder="Email Address" className="input input-bordered w-full max-w-xs" />
-          <button className="btn btn-primary mt-2">Subscribe</button>
-        </form>
+        <div className="eyebrow text-gold mb-3">Organisation</div>
+        <ul className="space-y-2 text-sm">
+          <li><Link to="/about-us" className="hover:text-gold">About</Link></li>
+          <li><Link to="/get-involved" className="hover:text-gold">Get involved</Link></li>
+          <li><Link to="/contact" className="hover:text-gold">Contact</Link></li>
+          <li><Link to="/auth" className="hover:text-gold">Team login</Link></li>
+        </ul>
       </div>
-      <div>
-        <span className="footer-title">Quick Links</span>
-        <a href="#" className="link link-hover">Privacy Policy</a>
-        <a href="#" className="link link-hover">Terms of Service</a>
+    </div>
+    <div className="border-t border-parchment/10">
+      <div className="container-wide py-5 text-xs text-parchment/60 flex flex-wrap justify-between gap-2">
+        <span>© {new Date().getFullYear()} HUFIDA. All rights reserved.</span>
+        <span>Registered non-profit organisation.</span>
       </div>
-    </footer>
-  );
-};
+    </div>
+  </footer>
+);
 
 export default Footer;

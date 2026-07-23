@@ -1,22 +1,27 @@
 import ReactGA from 'react-ga';
 
-export const initGA = (trackingID) => {
+const TRACKING_ID = import.meta.env.VITE_GA_TRACKING_ID;
+let enabled = false;
+
+export const initGA = (trackingID = TRACKING_ID) => {
+  if (!trackingID || trackingID.startsWith('UA-XXXX')) return;
   ReactGA.initialize(trackingID);
+  enabled = true;
 };
 
 export const logPageView = () => {
-  ReactGA.set({ page: window.location.pathname + window.location.search });
-  ReactGA.pageview(window.location.pathname + window.location.search);
+  if (!enabled) return;
+  const path = window.location.pathname + window.location.search;
+  ReactGA.set({ page: path });
+  ReactGA.pageview(path);
 };
 
 export const logEvent = (category = '', action = '') => {
-  if (category && action) {
-    ReactGA.event({ category, action });
-  }
+  if (!enabled || !category || !action) return;
+  ReactGA.event({ category, action });
 };
 
 export const logException = (description = '', fatal = false) => {
-  if (description) {
-    ReactGA.exception({ description, fatal });
-  }
+  if (!enabled || !description) return;
+  ReactGA.exception({ description, fatal });
 };
