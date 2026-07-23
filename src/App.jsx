@@ -28,6 +28,7 @@ import UserDashboard from './components/UserDashboard';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminHome from './pages/admin/AdminHome';
 import AdminRoles from './pages/admin/AdminRoles';
+import AdminActivity from './pages/admin/AdminActivity';
 import ProjectList from './components/ProjectList';
 import ProjectForm from './components/ProjectForm';
 import TaskList from './components/TaskList';
