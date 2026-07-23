@@ -11,6 +11,7 @@ const links = [
   { to: '/admin/resources', label: 'Resources' },
   { to: '/admin/profiles', label: 'Profiles' },
   { to: '/admin/group-profiles', label: 'Group profiles' },
+  { to: '/admin/roles', label: 'Roles' },
 ];
 
 const AdminLayout = () => {
