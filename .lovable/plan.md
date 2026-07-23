@@ -1,42 +1,55 @@
-## Scope
+# Real tables + RLS for the admin CRUD
 
-Rewrite the marketing components still using `p-10 bg-base-200` daisyUI styling so they match the Emerald Prestige / magazine system. Wire them to the images that already live in `public/images/` (the prior turn's "no images exist" note was wrong — hero-banner, project1–5, blog1–4, team, partners, infographics, and awareness images are all present).
+The six admin forms (`/admin/projects`, `tasks`, `milestones`, `resources`, `profiles`, `group-profiles`) currently call `supabase.from(...)` against tables that don't exist. This plan creates those tables, locks them down with an admin-only role, and keeps the existing form code working unchanged.
 
-## Components to rewrite
+## Tables
 
-Each is currently a centered card grid on `bg-base-200`. Rewrite to use the same tokens as `PageHeader` / `Home` (`bg-paper`, `text-ink`, `text-ink-soft`, `text-emerald-deep`, `border-line`, `eyebrow`, Archivo Black headings, editorial rhythm, no card shadows).
+All in `public`, all with `id uuid pk`, `created_at`, `updated_at` (auto via trigger), plus a `created_by uuid` referencing `auth.users` for auditing.
 
-- **`AboutUs.jsx`** — Story, Mission & Vision, Impact, Team, Partners. Drop the placeholder YouTube iframe. Keep the impact infographic as an inline figure. Team + partners become bordered profile blocks, not shadow cards.
-- **`Projects.jsx`** — Drop the placeholder YouTube iframe. Keep the Leaflet map but restyle the container. Current/Past projects become magazine article blocks with image-left / copy-right rows, progress bars in gold, and existing `project1-5.jpg` images.
-- **`News.jsx`** — Rewrite to the same divided-list pattern used in `Blog.jsx`, with a small category eyebrow and image thumbnails from `blog1-4.jpg`.
-- **`Contact.jsx`** — Two-column layout: contact details + labelled form. Emerald submit button, `border-line` inputs, no card shadow.
-- **`GetInvolved.jsx`** — Three stacked calls to action (Donate, Volunteer, Partner) as bordered feature blocks with an eyebrow, headline, body, and CTA.
-- **`FeaturedProjects.jsx`** / **`ProjectShowcase.jsx`** — Reconcile with the new `Projects.jsx`. `FeaturedProjects` becomes a compact 3-up "highlighted programmes" strip; `ProjectShowcase` becomes a full-width photo gallery from the existing project images. If either becomes redundant, remove it from `pages/Projects.jsx` rather than keeping empty sections.
-- **`Awareness.jsx`** page — Give it a `PageHeader`, use `container-wide`, and rebuild its three cards as bordered editorial blocks using the existing `awareness/*.jpg` files.
+| Table | Domain columns |
+|---|---|
+| `projects` | `name` (required), `description` |
+| `tasks` | `name` (required), `description`, `status` (`open`/`in_progress`/`done`, default `open`), `project_id` (nullable FK → projects) |
+| `milestones` | `name` (required), `description`, `project_id` (nullable FK → projects), `due_date` |
+| `resources` | `name` (required), `description`, `url` |
+| `profiles` | `name` (required), `email`, `role` (free-text, e.g. "Field officer") |
+| `group_profiles` | `name` (required), `description` |
 
-## Components not currently rendered anywhere
+Column set matches what the existing forms already insert (`name`, `description`, or `name`+`email` for profiles). Extra columns are nullable so current forms keep working; they become useful when forms are extended later.
 
-`MissionStatement`, `Testimonials`, `ImpactStories`, `Transparency`, `DonorRecognition`, `QuickLinks`, `InteractiveQuiz` — not referenced by any route after the P1 restructure. Delete them so they don't rot. If you want any of them kept for later, name which ones.
+Note: `profiles` here is the HUFIDA people directory managed in the admin — it is NOT an auth-user profile. Kept the name to avoid touching working component code.
 
-## Images
+## Access control
 
-Use the files already in `public/images/` — no new asset generation needed. Files in use:
+Use the standard roles pattern (roles must live in their own table, never on a user row):
 
-- Hero / featured: `hero-banner.jpg`, `project1-5.jpg`, `gallery1.jpg`, `impact1-2.jpg`
-- Editorial: `blog1-4.jpg`
-- Team: `team/john_doe.jpg`, `team/jane_smith.jpg`
-- Partners: `partners/partner1-3.png`
-- Infographics: `infographics/impact-infographic.png`, `project-progress-infographic.png`
-- Awareness: `awareness/development_issues.jpg`, `educational_resources.jpg`, `news_updates.jpg`
+- `app_role` enum with values `admin`, `editor`, `viewer` (only `admin` is used today; the others give us room).
+- `user_roles(user_id, role)` table.
+- `has_role(_user_id uuid, _role app_role)` — `security definer`, `stable`, `set search_path = public`.
+- Trigger on `auth.users` insert: if the `user_roles` table is empty, grant the new user `admin`. This bootstraps the first signup as admin so the site owner can log in and use `/admin` immediately; every later signup gets no role until an admin grants one.
 
-Team roster and partner list stay as-is (John Doe / Jane Smith, Partner 1–3) since no real names were provided. Flag if you want placeholder copy replaced with real people/orgs.
+RLS on all six CRUD tables:
 
-## Verify
+- SELECT / INSERT / UPDATE / DELETE: allowed only when `has_role(auth.uid(), 'admin')`.
+- No `anon` grants — data is admin-only.
+- `authenticated` gets `SELECT, INSERT, UPDATE, DELETE`; `service_role` gets `ALL`.
 
-`bun run build`, then screenshot `/about`, `/projects`, `/news`, `/contact`, `/get-involved`, `/awareness` at 1280×1800 to confirm the daisyUI card look is gone and each page reads as one continuous editorial layout with the new palette.
+RLS on `user_roles`:
 
-## Out of scope
+- SELECT: a user can read their own rows; admins can read all.
+- INSERT / UPDATE / DELETE: admins only.
 
-- Wiring admin CRUD forms to real Cloud tables (already flagged for a later pass).
-- Generating new photography — the existing stock is used as-is.
-- Changing the Home page or admin area.
+## What is NOT changing
+
+- No changes to `src/components/*Form.jsx` / `*List.jsx` — their existing `.from('projects')` etc. calls will start working the moment the migration runs.
+- No changes to `/admin` routing or `AuthContext`.
+- No changes to marketing pages.
+
+## Follow-ups (not in this plan, flag only)
+
+- The current forms don't stamp `created_by`. That's fine because RLS is admin-only, but adding `created_by: user.id` on insert would improve auditing — worth a small follow-up.
+- No UI yet for granting `admin` to a second user; done via SQL until an admin screen exists.
+
+## Deliverable
+
+A single `supabase--migration` call containing: enum, `user_roles`, `has_role`, first-user bootstrap trigger, the six CRUD tables with GRANTs + RLS + admin policies, and a shared `update_updated_at_column` trigger.
