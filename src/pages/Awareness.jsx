@@ -1,40 +1,51 @@
 import React from 'react';
+import PageHeader from '../components/PageHeader';
 
-const awarenessContent = [
+const items = [
   {
-    title: 'Development Issues in Africa',
-    content: 'Africa faces numerous development challenges including poverty, lack of access to clean water, education, and healthcare. Understanding these issues is the first step towards making a difference.',
+    title: 'Development challenges in Africa',
+    body: 'A plain-language primer on the issues our programmes address: water scarcity, primary education gaps, maternal health, and rural livelihood pressure across East and Central Africa.',
     image: '/images/awareness/development_issues.jpg',
+    tag: 'Primer',
   },
   {
-    title: 'Educational Resources',
-    content: 'We provide a variety of educational resources to help you understand the complexities of development work in Africa. From articles to infographics, our resources are designed to inform and inspire.',
+    title: 'Educational resources',
+    body: 'Articles, infographics, and briefings for supporters, students, and journalists who want to understand the work in more depth.',
     image: '/images/awareness/educational_resources.jpg',
+    tag: 'Library',
   },
   {
-    title: 'News Updates',
-    content: 'Stay updated with the latest news on our projects and initiatives. Learn about the impact we are making and how you can get involved.',
+    title: 'News & updates',
+    body: 'The latest programme reports, coalition announcements, and field notes from the countries where HUFIDA works.',
     image: '/images/awareness/news_updates.jpg',
+    tag: 'Updates',
   },
 ];
 
-const Awareness = () => {
-  return (
-    <div className="p-10 bg-base-200 text-center">
-      <h2 className="text-3xl font-bold">Awareness and Education</h2>
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {awarenessContent.map((item, index) => (
-          <div key={index} className="card bg-base-100 shadow-xl">
-            <figure><img src={item.image} alt={item.title} /></figure>
-            <div className="card-body">
-              <h2 className="card-title">{item.title}</h2>
-              <p>{item.content}</p>
+const AwarenessPage = () => (
+  <>
+    <PageHeader
+      eyebrow="Awareness & Education"
+      title="Understand the work before you support it."
+      lead="Short reads on the development challenges HUFIDA addresses and how our programmes are designed to answer them."
+    />
+    <section className="section">
+      <div className="container-wide grid md:grid-cols-3 gap-8">
+        {items.map((it) => (
+          <article key={it.title} className="border border-line flex flex-col">
+            <div className="aspect-[4/3] overflow-hidden">
+              <img src={it.image} alt={it.title} className="w-full h-full object-cover" />
             </div>
-          </div>
+            <div className="p-6 flex-1 flex flex-col">
+              <p className="eyebrow">{it.tag}</p>
+              <h2 className="text-xl md:text-2xl mt-2 mb-3">{it.title}</h2>
+              <p className="text-ink-soft leading-relaxed">{it.body}</p>
+            </div>
+          </article>
         ))}
       </div>
-    </div>
-  );
-};
+    </section>
+  </>
+);
 
-export default Awareness;
+export default AwarenessPage;

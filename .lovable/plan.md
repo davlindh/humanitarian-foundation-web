@@ -1,112 +1,42 @@
+## Scope
 
-# Completeness Review — HUFIDA Site
+Rewrite the marketing components still using `p-10 bg-base-200` daisyUI styling so they match the Emerald Prestige / magazine system. Wire them to the images that already live in `public/images/` (the prior turn's "no images exist" note was wrong — hero-banner, project1–5, blog1–4, team, partners, infographics, and awareness images are all present).
 
-Assessment only. No code changes proposed yet — pick which fixes to prioritize after reading.
+## Components to rewrite
 
-## Verdict
+Each is currently a centered card grid on `bg-base-200`. Rewrite to use the same tokens as `PageHeader` / `Home` (`bg-paper`, `text-ink`, `text-ink-soft`, `text-emerald-deep`, `border-line`, `eyebrow`, Archivo Black headings, editorial rhythm, no card shadows).
 
-The project is roughly **40–50% complete**. Routing, navigation, and a wide surface of components exist, but the app has serious structural bugs that make every route look broken, several nav destinations don't exist, and the design system is inconsistent with itself.
+- **`AboutUs.jsx`** — Story, Mission & Vision, Impact, Team, Partners. Drop the placeholder YouTube iframe. Keep the impact infographic as an inline figure. Team + partners become bordered profile blocks, not shadow cards.
+- **`Projects.jsx`** — Drop the placeholder YouTube iframe. Keep the Leaflet map but restyle the container. Current/Past projects become magazine article blocks with image-left / copy-right rows, progress bars in gold, and existing `project1-5.jpg` images.
+- **`News.jsx`** — Rewrite to the same divided-list pattern used in `Blog.jsx`, with a small category eyebrow and image thumbnails from `blog1-4.jpg`.
+- **`Contact.jsx`** — Two-column layout: contact details + labelled form. Emerald submit button, `border-line` inputs, no card shadow.
+- **`GetInvolved.jsx`** — Three stacked calls to action (Donate, Volunteer, Partner) as bordered feature blocks with an eyebrow, headline, body, and CTA.
+- **`FeaturedProjects.jsx`** / **`ProjectShowcase.jsx`** — Reconcile with the new `Projects.jsx`. `FeaturedProjects` becomes a compact 3-up "highlighted programmes" strip; `ProjectShowcase` becomes a full-width photo gallery from the existing project images. If either becomes redundant, remove it from `pages/Projects.jsx` rather than keeping empty sections.
+- **`Awareness.jsx`** page — Give it a `PageHeader`, use `container-wide`, and rebuild its three cards as bordered editorial blocks using the existing `awareness/*.jpg` files.
 
----
+## Components not currently rendered anywhere
 
-## 1. Feature coverage
+`MissionStatement`, `Testimonials`, `ImpactStories`, `Transparency`, `DonorRecognition`, `QuickLinks`, `InteractiveQuiz` — not referenced by any route after the P1 restructure. Delete them so they don't rot. If you want any of them kept for later, name which ones.
 
-### Structural bug (highest impact)
-In `src/App.jsx`, `<Routes>` only wraps the top switch. Below it, **every marketing section renders on every page unconditionally**:
+## Images
 
-```
-MissionStatement, QuickLinks, FeaturedProjects, Projects, AboutUs,
-GetInvolved, News, Testimonials, Contact, ImpactStories,
-ProjectShowcase, Transparency, DonorRecognition
-```
+Use the files already in `public/images/` — no new asset generation needed. Files in use:
 
-Result: visiting `/contact`, `/projects`, `/tasks/new`, etc. shows the requested route **plus the entire home page underneath it**. Until this is fixed, no page feels "complete" regardless of its own content.
+- Hero / featured: `hero-banner.jpg`, `project1-5.jpg`, `gallery1.jpg`, `impact1-2.jpg`
+- Editorial: `blog1-4.jpg`
+- Team: `team/john_doe.jpg`, `team/jane_smith.jpg`
+- Partners: `partners/partner1-3.png`
+- Infographics: `infographics/impact-infographic.png`, `project-progress-infographic.png`
+- Awareness: `awareness/development_issues.jpg`, `educational_resources.jpg`, `news_updates.jpg`
 
-### Navigation ↔ route mismatches
-`NavigationBar` links to destinations that aren't wired or don't exist as standalone pages:
-- `/about-us` → renders `<AboutUs />` component only; no dedicated hero/mission/team page.
-- `/partners`, `/blog`, `/news`, `/contact`, `/get-involved` → page files exist but weren't spot-checked; likely thin wrappers like `AboutUsPage` (just re-renders the shared component).
-- `/get-involved#donate` → no donate anchor/section verified.
-- No nav entry for: `/quiz`, `/awareness`, `/advanced-search`, `/user-profile`, `/user-dashboard`, `/projects/new`, `/tasks`, `/milestones`, `/resources`, `/profiles`, `/group-profiles`. These routes are dead-ends unless typed directly.
+Team roster and partner list stay as-is (John Doe / Jane Smith, Partner 1–3) since no real names were provided. Flag if you want placeholder copy replaced with real people/orgs.
 
-### Admin/CRUD surface is scaffolding only
-`ProjectForm`, `TaskForm`, `MilestoneForm`, `ResourceForm`, `ProfileForm`, `GroupProfileForm` and their List counterparts:
-- No auth gate, no edit, no delete, no validation, no success/error UI (only `console.log`).
-- `useSupabase` hook is broken — imports `useState`/`useEffect` are missing in `src/integrations/supabase/index.js`, and it pings a non-existent `example_table`, so every form/list shows "Loading…" forever or throws.
-- No indication these CRUD screens belong to an NGO marketing site — unclear if they're intended user-facing or leftover scaffolding.
+## Verify
 
-### Placeholder / stub content
-- `DonorRecognition`, `ProjectShowcase`, `Projects` use hardcoded dummy data ("John Doe", "example1" YouTube embeds, `/images/project1.jpg` that likely don't exist).
-- `UserProfile` submit is a `console.log` — no persistence.
-- Google Analytics ID is literally `"UA-XXXXXXXXX-X"`.
-- `HeroSection` references `/images/hero-banner.jpg` and `/images/another-banner.jpg` — need to confirm these exist in `public/`.
+`bun run build`, then screenshot `/about`, `/projects`, `/news`, `/contact`, `/get-involved`, `/awareness` at 1280×1800 to confirm the daisyUI card look is gone and each page reads as one continuous editorial layout with the new palette.
 
-### Build blocker (from earlier turn)
-Hosting/CI expects a `build:dev` script; `package.json` only defines `build`. Add `"build:dev": "vite build --mode development"`.
+## Out of scope
 
----
-
-## 2. Design & UX polish
-
-### Design system is incoherent
-Three styling systems collide with no single source of truth:
-- **daisyUI** classes (`btn btn-primary`, `card`, `hero`, `bg-base-100`)
-- **Custom CSS variables** in `index.css` (`--primary-color: #3498db`) that daisyUI ignores
-- **Tailwind arbitrary utilities** sprinkled throughout
-
-No `tailwind.config.js` theme customization tying these together. Colors on the page won't match the CSS variables. Fonts loaded twice (Helmet + likely index.html).
-
-### Layout & spacing
-- `App` wraps everything in `.container .section-padding`, so the nav, hero, and footer are all constrained to 1200px with 4rem vertical padding — hero can't go full-bleed, footer looks floating.
-- `HeroSection` uses `min-h-screen` (should be `min-h-dvh` for mobile) and is wrapped in a `.parallax` div on `/` only.
-- No consistent section rhythm — every component defines its own `p-10 bg-base-200 text-center`, producing a monotonous stack of identical gray blocks.
-
-### Component-level issues
-- **NavigationBar**: no mobile menu; dropdowns use both `dropdown-hover` and manual `onClick` state — conflicts on touch; no active-link styling.
-- **HeroSection**: three CTAs in the first slide (`Get Involved`, `Donate Now`, `Read Our Blog`) are plain buttons with no `onClick` or `Link` — they do nothing.
-- **Projects**: renders "Project Showcase" heading twice (once here, once in `ProjectShowcase` component below), plus another YouTube embed with placeholder `your-video-id`.
-- **Forms** (`ProjectForm`, `TaskForm`, etc.): unstyled native `<input>`/`<textarea>` with no labels-for, no daisyUI classes, no layout — visually broken next to the rest of the site.
-- **Breadcrumb** on every route including `/` — usually skipped on home.
-- No loading skeletons, empty states, or error toasts anywhere.
-
-### Accessibility gaps (spot-checked)
-- Icon-only chevrons OK (decorative), but dropdown labels use `<label>` for a non-input — should be `<button>`.
-- Images in `DonorRecognition`/`ProjectShowcase` may have alts but many use titles as alt (fine); no `alt=""` for decorative.
-- `min-h-screen` throughout — mobile viewport bug.
-- Color-only progress indicators ("Progress: 70%" as text is fine, but no visual bar).
-
----
-
-## 3. Suggested prioritization (nothing changed yet)
-
-```text
-P0 — makes the site usable at all
-  1. Move marketing sections inside a Route path="/" element (fix duplication on every page)
-  2. Add "build:dev" script
-  3. Fix src/integrations/supabase/index.js (missing imports; remove example_table probe)
-  4. Wire HeroSection CTAs to real routes
-
-P1 — makes the site feel finished
-  5. Decide fate of CRUD scaffolding (hide behind /admin + auth, or delete)
-  6. Reconcile design system: pick daisyUI theme OR custom tokens, not both;
-     move .container/.section-padding off the app root
-  7. Build real page shells for /about-us, /partners, /blog, /news, /contact,
-     /get-involved instead of re-rendering shared components
-  8. Mobile nav + active states; replace <label> triggers with <button>
-  9. Replace placeholder data (donors, YouTube IDs, GA tracking ID, images)
-
-P2 — polish
- 10. Loading/empty/error states on all Supabase-backed views
- 11. Section rhythm, typography scale, consistent card treatment
- 12. Accessibility pass (h-dvh, alts, labels, focus states)
-```
-
----
-
-## What I need from you
-
-Tell me which of these to tackle and I'll turn it into an implementation plan. Reasonable starting bundles:
-
-- **"Fix the obvious breakage"** → P0 items 1–4 only.
-- **"Make the marketing site presentable"** → P0 + P1 items 5–9, leave CRUD alone.
-- **"Full pass"** → everything through P2, plus a design-direction round (palette / type / layout) before touching visuals.
+- Wiring admin CRUD forms to real Cloud tables (already flagged for a later pass).
+- Generating new photography — the existing stock is used as-is.
+- Changing the Home page or admin area.
