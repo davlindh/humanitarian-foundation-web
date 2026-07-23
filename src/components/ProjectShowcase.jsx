@@ -1,52 +1,34 @@
 import React from 'react';
 
-const projects = [
-  {
-    title: 'Clean Water Initiative',
-    description: 'Providing access to clean and safe drinking water in rural areas.',
-    progress: 'Completed',
-    image: '/images/project1.jpg',
-    video: 'https://www.youtube.com/embed/example1',
-  },
-  {
-    title: 'Educational Programs',
-    description: 'Empowering children through education and skill development.',
-    progress: 'Ongoing',
-    image: '/images/project2.jpg',
-    video: 'https://www.youtube.com/embed/example2',
-  },
-  // Add more projects as needed
+const gallery = [
+  { src: '/images/project1.jpg', caption: 'Borehole commissioning, Nairobi County' },
+  { src: '/images/project2.jpg', caption: 'Primary school opening, Kampala' },
+  { src: '/images/project3.jpg', caption: 'Health centre reopening, Rift Valley' },
+  { src: '/images/project4.jpg', caption: 'Agricultural cooperative harvest' },
+  { src: '/images/project5.jpg', caption: 'Women\'s enterprise programme, cohort three' },
+  { src: '/images/gallery1.jpg', caption: 'Community outreach event' },
 ];
 
-const ProjectShowcase = () => {
-  return (
-    <div className="p-10 bg-base-200 text-center">
-      <h2 className="text-3xl font-bold">Project Showcase</h2>
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {projects.map((project, index) => (
-          <div key={index} className="card bg-base-100 shadow-xl">
-            <figure><img src={project.image} alt={project.title} /></figure>
-            <div className="card-body">
-              <h2 className="card-title">{project.title}</h2>
-              <p>{project.description}</p>
-              <p><strong>Progress:</strong> {project.progress}</p>
-              <div className="video-responsive">
-                <iframe
-                  width="560"
-                  height="315"
-                  src={project.video}
-                  title={project.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </div>
+const ProjectShowcase = () => (
+  <section className="mt-24 border-t border-line pt-16">
+    <p className="eyebrow">From the field</p>
+    <hr className="rule-gold" />
+    <h2 className="text-3xl md:text-4xl mb-10">Programme gallery.</h2>
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {gallery.map((g) => (
+        <figure key={g.src} className="group">
+          <div className="aspect-[4/3] overflow-hidden border border-line">
+            <img
+              src={g.src}
+              alt={g.caption}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
           </div>
-        ))}
-      </div>
+          <figcaption className="mt-2 text-xs text-ink-soft">{g.caption}</figcaption>
+        </figure>
+      ))}
     </div>
-  );
-};
+  </section>
+);
 
 export default ProjectShowcase;
