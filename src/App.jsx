@@ -27,6 +27,7 @@ import UserDashboard from './components/UserDashboard';
 // Admin
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminHome from './pages/admin/AdminHome';
+import AdminRoles from './pages/admin/AdminRoles';
 import ProjectList from './components/ProjectList';
 import ProjectForm from './components/ProjectForm';
 import TaskList from './components/TaskList';
@@ -97,6 +98,7 @@ function App() {
               <Route path="profiles/new" element={<ProfileForm />} />
               <Route path="group-profiles" element={<GroupProfileList />} />
               <Route path="group-profiles/new" element={<GroupProfileForm />} />
+              <Route path="roles" element={<AdminRoles />} />
             </Route>
           </Routes>
         </SiteChrome>
