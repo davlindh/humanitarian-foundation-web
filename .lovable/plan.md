@@ -1,55 +1,40 @@
-# Real tables + RLS for the admin CRUD
+# Restyle the four legacy pages
 
-The six admin forms (`/admin/projects`, `tasks`, `milestones`, `resources`, `profiles`, `group-profiles`) currently call `supabase.from(...)` against tables that don't exist. This plan creates those tables, locks them down with an admin-only role, and keeps the existing form code working unchanged.
+Bring `/quiz`, `/advanced-search`, `/user-profile`, `/user-dashboard` onto the Emerald Prestige system used by the rest of the site. All four currently render bare daisyUI (`p-10 bg-base-200`, `btn btn-primary`, `input input-bordered`) with no `PageHeader` and no editorial framing.
 
-## Tables
+## Shared treatment (all four)
 
-All in `public`, all with `id uuid pk`, `created_at`, `updated_at` (auto via trigger), plus a `created_by uuid` referencing `auth.users` for auditing.
+- Wrap in `<PageHeader>` for the title + eyebrow + gold rule, matching About/Projects/News.
+- Replace daisyUI utilities with the project's Tailwind tokens: `bg-paper`, `bg-parchment/40`, `text-ink`, `text-ink-soft`, `text-emerald-deep`, `border-line`, focus ring `focus:border-gold`.
+- Buttons: solid emerald primary (`bg-emerald-deep text-paper hover:bg-emerald-deep/90`) and outline secondary (`border border-line hover:border-gold`).
+- Inputs/selects/textareas: `w-full border border-line bg-paper px-3 py-2 focus:outline-none focus:border-gold`.
+- Section container: `mx-auto max-w-4xl px-4 py-12` (quiz narrower at `max-w-2xl`).
 
-| Table | Domain columns |
-|---|---|
-| `projects` | `name` (required), `description` |
-| `tasks` | `name` (required), `description`, `status` (`open`/`in_progress`/`done`, default `open`), `project_id` (nullable FK → projects) |
-| `milestones` | `name` (required), `description`, `project_id` (nullable FK → projects), `due_date` |
-| `resources` | `name` (required), `description`, `url` |
-| `profiles` | `name` (required), `email`, `role` (free-text, e.g. "Field officer") |
-| `group_profiles` | `name` (required), `description` |
+## Per-page changes
 
-Column set matches what the existing forms already insert (`name`, `description`, or `name`+`email` for profiles). Extra columns are nullable so current forms keep working; they become useful when forms are extended later.
+**InteractiveQuiz (`/quiz`)** — editorial quiz card.
+- Progress row: "Question X of Y" eyebrow + a thin gold progress bar.
+- Question in `font-display` serif-black, options as full-width bordered answer cards (hover → gold border, selected state on click).
+- Result screen: score in large display type, subtle summary line, "Restart" outline button.
+- Extend to 4 HUFIDA-relevant questions (health, water, education, region) so the quiz is representative rather than trivia.
 
-Note: `profiles` here is the HUFIDA people directory managed in the admin — it is NOT an auth-user profile. Kept the name to avoid touching working component code.
+**AdvancedSearch (`/advanced-search`)** — themed filter form.
+- Same field set (term, category, tag, date range), themed inputs, two-column grid on desktop, single column on mobile.
+- Adds a small "No results yet — run a search" empty-state block under the form so the page isn't blank after submit. Search logic stays as `console.log` (unchanged scope).
 
-## Access control
+**UserProfile (`/user-profile`)** & **UserDashboard (`/user-dashboard`)** — themed shells, still mock/local (they don't persist anywhere today, and wiring them to Cloud is outside this request).
+- UserProfile: two-column layout on desktop — avatar/upload block on the left, name/email/bio/privacy on the right; native file input styled via a bordered label wrapper.
+- UserDashboard: keep the two lists (Recent Activity, Saved Content) but as bordered rows on `bg-parchment/40` with eyebrow labels for activity type and date, matching the News page pattern.
+- Both pages get a small info line at the top: *"Demo view — data is not saved yet."* so it's clear these aren't the admin CRUD.
 
-Use the standard roles pattern (roles must live in their own table, never on a user row):
+## Not in scope
 
-- `app_role` enum with values `admin`, `editor`, `viewer` (only `admin` is used today; the others give us room).
-- `user_roles(user_id, role)` table.
-- `has_role(_user_id uuid, _role app_role)` — `security definer`, `stable`, `set search_path = public`.
-- Trigger on `auth.users` insert: if the `user_roles` table is empty, grant the new user `admin`. This bootstraps the first signup as admin so the site owner can log in and use `/admin` immediately; every later signup gets no role until an admin grants one.
+- No new routes, no removals, no auth wiring for UserProfile/UserDashboard, no backend changes.
+- No changes to `PageHeader`, tokens, or other pages.
 
-RLS on all six CRUD tables:
+## Files touched
 
-- SELECT / INSERT / UPDATE / DELETE: allowed only when `has_role(auth.uid(), 'admin')`.
-- No `anon` grants — data is admin-only.
-- `authenticated` gets `SELECT, INSERT, UPDATE, DELETE`; `service_role` gets `ALL`.
-
-RLS on `user_roles`:
-
-- SELECT: a user can read their own rows; admins can read all.
-- INSERT / UPDATE / DELETE: admins only.
-
-## What is NOT changing
-
-- No changes to `src/components/*Form.jsx` / `*List.jsx` — their existing `.from('projects')` etc. calls will start working the moment the migration runs.
-- No changes to `/admin` routing or `AuthContext`.
-- No changes to marketing pages.
-
-## Follow-ups (not in this plan, flag only)
-
-- The current forms don't stamp `created_by`. That's fine because RLS is admin-only, but adding `created_by: user.id` on insert would improve auditing — worth a small follow-up.
-- No UI yet for granting `admin` to a second user; done via SQL until an admin screen exists.
-
-## Deliverable
-
-A single `supabase--migration` call containing: enum, `user_roles`, `has_role`, first-user bootstrap trigger, the six CRUD tables with GRANTs + RLS + admin policies, and a shared `update_updated_at_column` trigger.
+- `src/components/InteractiveQuiz.jsx`
+- `src/components/AdvancedSearch.jsx`
+- `src/components/UserProfile.jsx`
+- `src/components/UserDashboard.jsx`
