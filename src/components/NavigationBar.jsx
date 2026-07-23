@@ -1,54 +1,103 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { FaBars, FaTimes } from 'react-icons/fa';
 import { logPageView } from '../utils/analytics';
-import { FaChevronDown } from 'react-icons/fa';
+import { useAuth } from '../auth/AuthContext';
+
+const primaryLinks = [
+  { to: '/about-us', label: 'About' },
+  { to: '/projects', label: 'Projects' },
+  { to: '/get-involved', label: 'Get Involved' },
+  { to: '/news', label: 'News' },
+  { to: '/blog', label: 'Blog' },
+  { to: '/partners', label: 'Partners' },
+  { to: '/contact', label: 'Contact' },
+];
+
+const linkClass = ({ isActive }) =>
+  `px-3 py-2 text-sm font-medium tracking-wide transition ${
+    isActive
+      ? 'text-emerald-deep border-b-2 border-gold'
+      : 'text-ink hover:text-emerald-deep border-b-2 border-transparent hover:border-emerald/40'
+  }`;
 
 const NavigationBar = () => {
   const location = useLocation();
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [isGetInvolvedOpen, setIsGetInvolvedOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     logPageView();
+    setMobileOpen(false);
   }, [location]);
 
   return (
-    <nav className="navbar bg-base-100">
-      <div className="flex-1">
-        <Link to="/" className="btn btn-ghost normal-case text-xl">HUFIDA</Link>
+    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-line">
+      <div className="container-wide flex items-center justify-between h-16">
+        <Link to="/" className="flex items-baseline gap-2">
+          <span className="font-display text-2xl text-emerald-deep tracking-tight">HUFIDA</span>
+          <span className="hidden sm:inline text-xs text-ink-soft uppercase tracking-widest">
+            Sustainable Development
+          </span>
+        </Link>
+
+        <nav className="hidden lg:flex items-center gap-1" aria-label="Primary">
+          {primaryLinks.map((l) => (
+            <NavLink key={l.to} to={l.to} className={linkClass}>
+              {l.label}
+            </NavLink>
+          ))}
+          <Link
+            to="/get-involved#donate"
+            className="ml-3 btn btn-primary btn-sm rounded-none font-display tracking-wide"
+          >
+            Donate
+          </Link>
+          {user ? (
+            <Link to="/admin" className="ml-1 btn btn-ghost btn-sm rounded-none">Admin</Link>
+          ) : null}
+        </nav>
+
+        <button
+          type="button"
+          className="lg:hidden btn btn-ghost btn-sm"
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((v) => !v)}
+        >
+          {mobileOpen ? <FaTimes /> : <FaBars />}
+        </button>
       </div>
-      <div className="flex-none">
-        <ul className="menu menu-horizontal px-1">
-          <li>
-            <div className="dropdown dropdown-hover">
-              <label tabIndex={0} className="btn btn-ghost m-1" onClick={() => setIsAboutOpen(!isAboutOpen)} aria-haspopup="true" aria-expanded={isAboutOpen}>
-                About <FaChevronDown className="ml-1" />
-              </label>
-              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                <li><Link to="/about-us">About Us</Link></li>
-                <li><Link to="/partners">Partners</Link></li>
-              </ul>
-            </div>
-          </li>
-          <li><Link to="/projects">Projects</Link></li>
-          <li>
-            <div className="dropdown dropdown-hover">
-              <label tabIndex={0} className="btn btn-ghost m-1" onClick={() => setIsGetInvolvedOpen(!isGetInvolvedOpen)} aria-haspopup="true" aria-expanded={isGetInvolvedOpen}>
-                Get Involved <FaChevronDown className="ml-1" />
-              </label>
-              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                <li><Link to="/get-involved">Volunteer</Link></li>
-                <li><Link to="/get-involved#donate">Donate</Link></li>
-              </ul>
-            </div>
-          </li>
-          <li><Link to="/news">News</Link></li>
-          <li><Link to="/blog">Blog</Link></li>
-          <li><Link to="/contact">Contact</Link></li>
-        </ul>
-      </div>
-    </nav>
+
+      {mobileOpen && (
+        <div className="lg:hidden border-t border-line bg-surface">
+          <nav className="container-wide py-3 flex flex-col" aria-label="Mobile">
+            {primaryLinks.map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                className={({ isActive }) =>
+                  `py-3 border-b border-line text-base ${
+                    isActive ? 'text-emerald-deep font-semibold' : 'text-ink'
+                  }`
+                }
+              >
+                {l.label}
+              </NavLink>
+            ))}
+            <Link
+              to="/get-involved#donate"
+              className="mt-4 btn btn-primary rounded-none font-display"
+            >
+              Donate
+            </Link>
+            {user && (
+              <Link to="/admin" className="mt-2 btn btn-outline rounded-none">Admin</Link>
+            )}
+          </nav>
+        </div>
+      )}
+    </header>
   );
 };
 
