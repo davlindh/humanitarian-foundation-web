@@ -100,6 +100,7 @@ function App() {
               <Route path="group-profiles" element={<GroupProfileList />} />
               <Route path="group-profiles/new" element={<GroupProfileForm />} />
               <Route path="roles" element={<AdminRoles />} />
+              <Route path="activity" element={<AdminActivity />} />
             </Route>
           </Routes>
         </SiteChrome>
