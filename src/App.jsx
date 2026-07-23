@@ -60,9 +60,32 @@ function App() {
         <NavigationBar />
         <Breadcrumb />
         <Routes>
-          <Route path="/" element={<div className="parallax" style={{backgroundImage: "url('/images/hero-banner.jpg')"}}><HeroSection /></div>} />
+          <Route
+            path="/"
+            element={
+              <>
+                <div className="parallax" style={{ backgroundImage: "url('/images/hero-banner.jpg')" }}>
+                  <HeroSection />
+                </div>
+                <MissionStatement />
+                <QuickLinks />
+                <FeaturedProjects />
+                <Projects />
+                <AboutUs />
+                <GetInvolved />
+                <News />
+                <Testimonials />
+                <Contact />
+                <ImpactStories />
+                <ProjectShowcase />
+                <Transparency />
+                <DonorRecognition />
+              </>
+            }
+          />
           <Route path="/about-us" element={<AboutUsPage />} />
-          <Route path="/projects" element={<ProjectList />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/manage" element={<ProjectList />} />
           <Route path="/projects/new" element={<ProjectForm />} />
           <Route path="/tasks" element={<TaskList />} />
           <Route path="/tasks/new" element={<TaskForm />} />
@@ -85,19 +108,6 @@ function App() {
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
         </Routes>
-        <MissionStatement />
-        <QuickLinks />
-        <FeaturedProjects />
-        <Projects />
-        <AboutUs />
-        <GetInvolved />
-        <News />
-        <Testimonials />
-        <Contact />
-        <ImpactStories />
-        <ProjectShowcase />
-        <Transparency />
-        <DonorRecognition />
         <Footer />
       </Router>
     </div>
