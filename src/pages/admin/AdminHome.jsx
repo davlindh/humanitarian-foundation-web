@@ -8,6 +8,7 @@ const cards = [
   { to: '/admin/resources', label: 'Resources', desc: 'Materials, docs, and shared references.' },
   { to: '/admin/profiles', label: 'Profiles', desc: 'Individuals working with HUFIDA.' },
   { to: '/admin/group-profiles', label: 'Group profiles', desc: 'Partner organizations and cohorts.' },
+  { to: '/admin/roles', label: 'Roles', desc: 'Grant or revoke admin access for other users.' },
 ];
 
 const AdminHome = () => (
