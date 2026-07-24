@@ -11,6 +11,7 @@ import Breadcrumb from './components/Breadcrumb';
 import Home from './pages/Home';
 import AboutUsPage from './pages/AboutUs';
 import ProjectsPage from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 import GetInvolvedPage from './pages/GetInvolved';
 import NewsPage from './pages/News';
 import ContactPage from './pages/Contact';
@@ -59,6 +60,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about-us" element={<AboutUsPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/projects/:slug" element={<ProjectDetail />} />
             <Route path="/get-involved" element={<GetInvolvedPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/news/:slug" element={<NewsPage />} />

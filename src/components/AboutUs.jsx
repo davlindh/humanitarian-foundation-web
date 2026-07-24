@@ -1,6 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../integrations/supabase/client';
 
+const TeamMember = ({ m }) => {
+  const [open, setOpen] = useState(false);
+  const long = (m.bio || '').length > 220;
+  const shown = !long || open ? m.bio : (m.bio || '').slice(0, 220).trimEnd() + '…';
+  return (
+    <article className="grid grid-cols-[120px_1fr] gap-6 items-start">
+      {m.avatar_url ? (
+        <img
+          src={m.avatar_url}
+          alt={m.name}
+          className="w-[120px] h-[120px] object-cover border border-line grayscale hover:grayscale-0 transition"
+        />
+      ) : (
+        <div className="w-[120px] h-[120px] border border-line bg-parchment/40 flex items-center justify-center text-ink-soft text-xs">
+          No photo
+        </div>
+      )}
+      <div>
+        <h3 className="text-xl mb-1">{m.name}</h3>
+        {m.role && <p className="eyebrow mb-3">{m.role}</p>}
+        {m.bio && (
+          <>
+            <p className="text-ink-soft leading-relaxed whitespace-pre-wrap">{shown}</p>
+            {long && (
+              <button
+                onClick={() => setOpen((v) => !v)}
+                className="mt-2 text-sm text-emerald-deep font-semibold underline underline-offset-4"
+              >
+                {open ? 'Read less ←' : 'Read bio →'}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </article>
+  );
+};
+
 const AboutUs = () => {
   const [team, setTeam] = useState([]);
   const [partners, setPartners] = useState([]);
