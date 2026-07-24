@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '../integrations/supabase/client';
 
-// Default map coordinates when project has no explicit location
 const DEFAULT_POS = [0.5, 34];
-// Simple deterministic jitter so multiple markers don't overlap
 const jitter = (i) => [DEFAULT_POS[0] + (i % 3) * 0.5, DEFAULT_POS[1] + Math.floor(i / 3) * 0.5];
 
 const ProgressBar = ({ value }) => (
@@ -36,14 +35,8 @@ const Projects = () => {
     return () => { c = true; };
   }, []);
 
-  const current = useMemo(
-    () => rows.filter((r) => r.status !== 'completed'),
-    [rows]
-  );
-  const past = useMemo(
-    () => rows.filter((r) => r.status === 'completed'),
-    [rows]
-  );
+  const current = useMemo(() => rows.filter((r) => r.status !== 'completed'), [rows]);
+  const past = useMemo(() => rows.filter((r) => r.status === 'completed'), [rows]);
 
   return (
     <div className="space-y-24">
@@ -75,11 +68,16 @@ const Projects = () => {
             {current.map((p, i) => (
               <article key={p.id} className="grid md:grid-cols-2 gap-10 items-start">
                 {p.cover_image ? (
-                  <img
-                    src={p.cover_image}
-                    alt={p.name}
-                    className={`w-full aspect-[4/3] object-cover border border-line ${i % 2 ? 'md:order-2' : ''}`}
-                  />
+                  <Link
+                    to={`/projects/${p.slug}`}
+                    className={`block ${i % 2 ? 'md:order-2' : ''}`}
+                  >
+                    <img
+                      src={p.cover_image}
+                      alt={p.name}
+                      className="w-full aspect-[4/3] object-cover border border-line"
+                    />
+                  </Link>
                 ) : (
                   <div className={`w-full aspect-[4/3] border border-line bg-parchment/40 flex items-center justify-center text-ink-soft ${i % 2 ? 'md:order-2' : ''}`}>
                     No image
@@ -87,9 +85,11 @@ const Projects = () => {
                 )}
                 <div>
                   {p.location && <p className="eyebrow">{p.location}</p>}
-                  <h3 className="text-2xl md:text-3xl mt-2 mb-4">{p.name}</h3>
+                  <h3 className="text-2xl md:text-3xl mt-2 mb-4">
+                    <Link to={`/projects/${p.slug}`} className="hover:text-emerald-deep">{p.name}</Link>
+                  </h3>
                   {p.description && (
-                    <p className="text-ink-soft leading-relaxed mb-6">{p.description}</p>
+                    <p className="text-ink-soft leading-relaxed mb-6 line-clamp-4">{p.description}</p>
                   )}
                   {p.status && (
                     <p className="text-sm mb-6">
@@ -98,6 +98,12 @@ const Projects = () => {
                     </p>
                   )}
                   <ProgressBar value={statusProgress[p.status] ?? 50} />
+                  <Link
+                    to={`/projects/${p.slug}`}
+                    className="inline-block mt-6 text-emerald-deep font-semibold underline underline-offset-4"
+                  >
+                    Read the full brief →
+                  </Link>
                 </div>
               </article>
             ))}
@@ -114,13 +120,23 @@ const Projects = () => {
             {past.map((p) => (
               <article key={p.id} className="border border-line">
                 {p.cover_image && (
-                  <img src={p.cover_image} alt={p.name} className="w-full aspect-[16/9] object-cover" />
+                  <Link to={`/projects/${p.slug}`}>
+                    <img src={p.cover_image} alt={p.name} className="w-full aspect-[16/9] object-cover" />
+                  </Link>
                 )}
                 <div className="p-6">
-                  <h3 className="text-xl mb-3">{p.name}</h3>
+                  <h3 className="text-xl mb-3">
+                    <Link to={`/projects/${p.slug}`} className="hover:text-emerald-deep">{p.name}</Link>
+                  </h3>
                   {p.description && (
-                    <p className="text-ink-soft leading-relaxed">{p.description}</p>
+                    <p className="text-ink-soft leading-relaxed line-clamp-3">{p.description}</p>
                   )}
+                  <Link
+                    to={`/projects/${p.slug}`}
+                    className="inline-block mt-4 text-sm text-emerald-deep underline underline-offset-4"
+                  >
+                    Read the brief →
+                  </Link>
                 </div>
               </article>
             ))}
@@ -143,6 +159,8 @@ const Projects = () => {
                 <Popup>
                   <strong>{p.name}</strong>
                   {p.location && <><br />{p.location}</>}
+                  <br />
+                  <Link to={`/projects/${p.slug}`}>View programme →</Link>
                 </Popup>
               </Marker>
             ))}

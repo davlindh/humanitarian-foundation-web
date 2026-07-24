@@ -1,94 +1,121 @@
+# Genomgång: var användaren förväntar sig mer detaljer
 
-## Goal
+Nedan är alla punkter i den publika sajten där texten lovar "mer" — men där länken antingen är död, går till en listsida istället för en detaljvy, eller bara expanderar in-place utan en delbar permalänk. Grupperat per sida med föreslagen åtgärd.
 
-Complete the design token layer so every surface — public site AND admin — inherits the same Emerald Prestige geometry, motion, and editorial style. Retire daisyUI as the styling authority. Ship reusable React primitives so future work never touches raw utility classes.
+## 1. Projects (`/projects`)
 
-## Token layer (src/index.css + tailwind.config.js)
+Nuvarande beteende (`src/components/Projects.jsx`):
+- Varje programkort visar namn, beskrivning, status och en progress-bar — men det finns **ingen "Read more"** och ingen väg till en detaljsida per projekt.
+- `FeaturedProjects` och `ProjectShowcase` renderas ovanpå listan utan egna länkar in.
+- Kartmarkörer använder deterministisk jitter från `DEFAULT_POS` istället för riktiga koordinater, och popup:en har ingen "View project"-länk.
 
-### 1. Color — semantic layer on top of the palette
-Palette stays; add role tokens so components consume intent, not hue:
+Åtgärd:
+- Ny route `/projects/:slug` som hämtar ett projekt från `public.projects` och renderar full text, alla milstolpar (`milestones` filtrerat på `project_id`), resurser (`resources`), och location.
+- Lägg till `slug` (unique) på `projects` om det saknas — DB-migration med backfill från `name`.
+- Kort i `Projects.jsx` får titel som `<Link to={/projects/${p.slug}}>` + "Read the full brief →".
+- Kartpopup får samma länk.
+- `FeaturedProjects` "Learn more" pekar mot slug istället för `/projects`.
 
+## 2. News (`/news`)
+
+Nuvarande beteende (`src/components/News.jsx`):
+- Två parallella affordanser på varje kort: "Read more ←/→" som togglar `expanded` in-place **och** en separat "Permalink" som går till `/news/:slug`. Förvirrande — samma innehåll, två interaktioner.
+- Press releases använder bara toggle, ingen tydlig permalänk.
+- Detaljvyn `PostView` visar innehåll men saknar **nästa/föregående-navigation**, relaterade poster, och delningslänkar.
+
+Åtgärd:
+- Ta bort in-place toggle. "Read more →" pekar direkt på `/news/:slug` (samma för blog och press).
+- På `/news/:slug`: lägg till "← Föregående / Nästa →" baserat på `published_at`-ordning, samt ett block "Fler från samma kategori" (3 senaste med matchande `category`).
+- Lägg till JSON-LD (`Article`) och `<title>`/`<meta description>` per post via `react-helmet-async` (installera).
+
+## 3. Blog (`/blog`)
+
+Nuvarande beteende (`src/pages/Blog.jsx`):
+- Hårdkodad array `posts` med "Read more →" som är en `<button>` utan onClick — **helt död länk**.
+- Innehållet överlappar med News (blog-poster ligger redan i `news_posts` med `post_type='blog'`).
+
+Åtgärd:
+- Ersätt hårdkodade listan med query mot `news_posts` där `post_type = 'blog'` och `is_published = true`.
+- "Read more →" blir `<Link to={/news/${p.slug}}>` och återanvänder samma detaljvy.
+- Alternativt: gör `/blog` till en alias-route som filtrerar `News`-komponenten på blog-typ.
+
+## 4. About Us (`/about-us`)
+
+Nuvarande beteende (`src/components/AboutUs.jsx`):
+- Team-kort visar namn, roll, bio — men bio klipps aldrig och det finns ingen profilsida.
+- Partner-kort länkar bara till extern `p.website`, ingen intern detaljvy.
+- "Our Impact"-sektionen visar en statisk infografik utan länk till underliggande siffror/rapport.
+
+Åtgärd:
+- Kollapsa långa bios till 3 rader med "Read bio →" som expanderar in-place (inget behov av route här — bios är korta).
+- Impact-figuren får en "Läs 2025 impact report →"-länk till `/news/2025-impact-report` (eller senaste post i kategori `report`).
+
+## 5. Partners (`/partners`)
+
+Nuvarande beteende (`src/pages/Partners.jsx`):
+- Kort visar tier, namn, description. Extern länk endast om `website` finns. Ingen kategoriindelning (samma data som About visar redan grupperat).
+- Ingen "Read more" / detaljvy per partner.
+
+Åtgärd:
+- Gruppera per `tier` (Government / Coalition / Foundation / Assurance) med rubriker — samma modell som redan används i About.
+- Om `description` > 240 tecken: "Read more" som expanderar in-place.
+- Extern webbsajt visas som sekundär pill-knapp "Visit website ↗" istället för inbäddad rubriklänk.
+
+## 6. Home (`/`)
+
+Nuvarande beteende (`src/pages/Home.jsx`):
+- **"Read the full programme brief →"** på featured-programmet pekar på `/projects` (listsidan), inte på det specifika programmet.
+- Supporting-kort ("Five new primary schools…", "Three health centres…") — titel-länk går också till `/projects`.
+- "Latest"-listan i högerkolumnen har hårdkodade rubriker vars href alla är `/news`.
+
+Åtgärd:
+- Låt featured och supporting hämtas från `projects` (t.ex. flagga `is_featured` eller de tre nyaste `active`) och länka till `/projects/:slug`.
+- "Latest"-listan hämtas från `news_posts` (senaste 3 publicerade) och länkar till `/news/:slug`.
+
+## 7. Awareness (`/awareness`)
+
+Nuvarande beteende (`src/pages/Awareness.jsx`):
+- Tre hårdkodade kort ("Primer", "Library", "Updates") — **inga länkar alls**. Sidan är en återvändsgränd.
+
+Åtgärd:
+- Varje kort får en tydlig destination:
+  - Primer → `/news?category=primer` (filtrerad newslista)
+  - Library → ny sida `/awareness/library` som listar `resources` från DB där `is_public = true`
+  - Updates → `/news`
+- Lägg till `?category=` -stöd i `News.jsx` (query-param filter).
+
+## 8. Get Involved (`/get-involved`)
+
+Snabbkontroll: `#donate`-ankaret fungerar, men engagement-tiles (volunteer/partner/etc.) borde varje leda till ett dedikerat ankare eller sida med formulär snarare än en modal-lös tile.
+
+Åtgärd:
+- Volunteer-tile → `/get-involved#volunteer` med ett riktigt formulär (skriver till ny tabell `volunteer_applications`).
+- Partner-tile → `/partners#become-a-partner` med kontaktformulär.
+- (Utanför scope om användaren bara vill ha länknings-passet — flaggas här för nästa iteration.)
+
+---
+
+## Sammanfattande route-tillägg
+```text
+/projects/:slug         → nytt, detaljvy per programme
+/awareness/library      → nytt, publika resurser
 ```
---surface           /* page background (parchment warm) */
---surface-elevated  /* cards, popovers — slightly lighter */
---surface-muted     /* alternating bands (emerald-mist) */
---surface-inverse   /* emerald-deep sections */
 
---content           /* body ink */
---content-soft      /* secondary text */
---content-inverse   /* text on emerald */
---content-brand     /* emerald deep for headings */
---content-accent    /* gold for eyebrows */
+## DB-tillägg
+- `projects.slug text unique not null` + backfill-migration.
+- (valfritt) `projects.is_featured boolean default false` för Home-featured urval.
 
---border-subtle     /* hairlines */
---border-strong     /* dividers */
---border-brand      /* emerald outlines */
-```
+## Tekniska anteckningar
+- Slug-generering återanvänder helper i `NewsAdmin.jsx` (`.slice(0,80)`-varianten) — extrahera till `src/lib/slug.ts`.
+- Föregående/nästa i News: enkel `.lt()`/`.gt()` på `published_at` med `.limit(1)`.
+- SEO per detaljvy: `react-helmet-async` installeras, `<HelmetProvider>` runt `<AuthProvider>` i `App.jsx`.
+- Query-param filter i News: läs `useSearchParams()` och applicera på Supabase-queryn.
 
-### 2. Radius — already scaled; add semantic aliases
-`--radius-field`, `--radius-card`, `--radius-pill`, `--radius-image`.
-
-### 3. Shadow — expand from 2 to 4
-`--shadow-hairline` (1px inset for cards on parchment), `--shadow-soft`, `--shadow-lift`, `--shadow-overlay` (modals, popovers).
-
-### 4. Gradients — named, reusable
-`--gradient-emerald-fade` (hero→paper transition, already inline), `--gradient-gold-rule` (2px gold line accent), `--gradient-hero-veil` (image overlay for legibility).
-
-### 5. Motion
-`--ease-editorial: cubic-bezier(0.22, 1, 0.36, 1)`, `--duration-fast: 180ms`, `--duration-base: 280ms`, `--duration-slow: 480ms`. Applied via a `.transition-editorial` utility.
-
-### 6. Focus, spacing rhythm
-`--focus-ring: 0 0 0 3px rgba(201,168,76,0.35)`, section padding scale, container widths already tokenized.
-
-### 7. Tailwind theme extends
-Expose all of the above as Tailwind utilities: `bg-surface-elevated`, `text-content-soft`, `border-border-subtle`, `shadow-overlay`, `rounded-card`, `duration-base`, `ease-editorial`, `bg-gradient-emerald-fade`.
-
-## Component primitives (`src/components/ui/`)
-
-Small, headless-ish, token-driven React primitives. No daisyUI. All use `class-variance-authority`-style variants inline (already using `clsx`-style patterns), no new dependency needed.
-
-- **`Button.jsx`** — variants: `primary` (emerald pill), `secondary` (gold outline pill), `ghost`, `link`, `donate` (gold fill). Sizes: `sm | md | lg`. Loading state.
-- **`Link.jsx`** — variants: `inline` (emerald underline), `standalone` (arrow suffix), `nav` (active-aware, wraps NavLink).
-- **`Card.jsx`** — surfaces: `paper | elevated | inverse`. Optional `hoverable` prop triggers lift + shadow-lift.
-- **`Field.jsx`** + **`Textarea.jsx`** + **`Select.jsx`** — themed labels, focus rings, error state. Retires daisyUI `input`/`select`/`textarea`.
-- **`Badge.jsx`** — variants: `neutral | brand | gold | success | warning | danger`.
-- **`Divider.jsx`** — variants: `hairline | rule-gold | soft`.
-- **`Eyebrow.jsx`** — replaces raw `<p className="eyebrow">`.
-- **`SectionHeader.jsx`** — bundles eyebrow + rule + title + optional lead (already partially in `PageHeader`, but for in-page sections).
-
-Each primitive exports its variant class fn so admins can compose without importing daisyUI.
-
-## Migration sweep
-
-- **Public marketing:** `HeroSection`, `Home`, `AboutUs`, `Projects`, `News`, `Contact`, `GetInvolved`, `Partners`, `FeaturedProjects`, `Breadcrumb`, `NavigationBar`, `Awareness`, `Blog`, `InteractiveQuiz`, `AdvancedSearch`, `UserProfile`, `UserDashboard`, `ProjectShowcase`. Swap `btn btn-*`, `card`, `input`, `select`, `textarea`, `badge`, `alert` → primitives.
-- **Admin:** `AdminLayout`, `AdminHome`, `AdminActivity`, `AdminRoles`, `NewsAdmin`, all `_shared/*` (`ResourcePage`, `primitives.jsx`, `ImageUploader`). Rebuild the admin `primitives.jsx` on top of the new `ui/` primitives so both worlds share one system.
-- **Auth pages:** `Auth.jsx`, `AdminRoute` empty states.
-
-## Retire daisyUI
-
-- Remove `require("daisyui")` from `tailwind.config.js`.
-- Remove `data-theme="hufida"` from `index.html`.
-- `bun remove daisyui` in build mode.
-- Grep sweep for `btn|card|input|select|textarea|badge|alert|tabs|modal|drawer|menu|navbar|hero-content|hero-overlay|hero-slide` daisy class survivors; convert each.
-
-## Verification
-
-- `bun run build` clean.
-- Playwright shots at 390px and 1280px of: `/`, `/get-involved`, `/about-us`, `/projects`, `/news`, `/contact`, `/auth`, `/admin`, `/admin/news`. Confirm consistent radius, pill CTAs, gold eyebrows, soft shadows, no square daisyUI leftovers.
-
-## Files created / modified (headline)
-
-**New:** `src/components/ui/{Button,Link,Card,Field,Textarea,Select,Badge,Divider,Eyebrow,SectionHeader}.jsx`, `src/components/ui/index.js`, `src/components/ui/variants.js` (shared cva-style helper).
-
-**Modified:** `src/index.css` (full token expansion), `tailwind.config.js` (semantic tokens + gradients + motion, drop daisyUI), `index.html` (drop data-theme), `package.json` (drop daisyUI), plus every component listed in the migration sweep.
-
-**No changes:** routing, data fetching, RLS, edge functions, business logic.
-
-## Risks
-
-- daisyUI removal touches many files; done as one coordinated pass to avoid a half-migrated state.
-- `react-slick`'s slick-theme.css still ships default dot styling — will theme via override in `index.css`.
-
-## Out of scope
-
-- New pages, copy changes, motion beyond token-level transitions (no scroll-linked animation), image asset changes.
+## Ordning
+1. Slug + migration + `/projects/:slug` (störst impact — Home & Projects lovar redan detta).
+2. Blog → News-driven (tar bort död "Read more"-knapp).
+3. News in-place toggle bort + prev/next + related.
+4. Awareness-kort får destinationer + `?category=` i News.
+5. Home featured/supporting/latest hämtar från DB och länkar korrekt.
+6. Partners tier-gruppering + expand.
+7. About team bio-expand.

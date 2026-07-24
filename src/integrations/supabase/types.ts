@@ -230,8 +230,10 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          is_featured: boolean
           location: string | null
           name: string
+          slug: string
           status: string | null
           updated_at: string
         }
@@ -241,8 +243,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_featured?: boolean
           location?: string | null
           name: string
+          slug: string
           status?: string | null
           updated_at?: string
         }
@@ -252,8 +256,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_featured?: boolean
           location?: string | null
           name?: string
+          slug?: string
           status?: string | null
           updated_at?: string
         }
