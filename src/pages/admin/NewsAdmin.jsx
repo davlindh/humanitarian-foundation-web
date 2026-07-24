@@ -8,30 +8,30 @@ import {
 import ImageUploader from './_shared/ImageUploader';
 
 const POST_TYPES = ['blog', 'press'];
-const STATUS_TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'draft', label: 'Drafts' },
+
+const STATUSES = [
+  { key: 'draft', label: 'Draft' },
+  { key: 'under_review', label: 'Under review' },
   { key: 'scheduled', label: 'Scheduled' },
-  { key: 'live', label: 'Live' },
+  { key: 'published', label: 'Published' },
 ];
+
+const STATUS_TABS = [{ key: 'all', label: 'All' }, ...STATUSES];
+
+const STATUS_STYLE = {
+  draft: 'border-ink-soft text-ink-soft',
+  under_review: 'border-amber-600 text-amber-700 bg-amber-50',
+  scheduled: 'border-gold text-gold',
+  published: 'border-emerald-deep bg-emerald-deep text-paper',
+};
+
+const STATUS_LABEL = Object.fromEntries(STATUSES.map((s) => [s.key, s.label]));
 
 const slugify = (s) =>
   (s || '').toLowerCase().trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
-
-const statusOf = (row) => {
-  if (!row.is_published) return 'draft';
-  if (row.published_at && new Date(row.published_at) > new Date()) return 'scheduled';
-  return 'live';
-};
-
-const STATUS_STYLE = {
-  draft: 'border-ink-soft text-ink-soft',
-  scheduled: 'border-gold text-gold',
-  live: 'border-emerald-deep bg-emerald-deep text-paper',
-};
 
 const toDateTimeInput = (iso) => {
   if (!iso) return '';
@@ -48,12 +48,14 @@ const defaults = {
   excerpt: '',
   content: '',
   image_url: '',
-  is_published: false,
+  status: 'draft',
+  reviewer_id: '',
   published_at: '',
 };
 
 const NewsAdmin = () => {
   const [rows, setRows] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -79,9 +81,15 @@ const NewsAdmin = () => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  const loadUsers = async () => {
+    const { data, error: err } = await supabase.functions.invoke('admin-users', {
+      body: { action: 'list' },
+    });
+    if (!err && data?.users) setUsers(data.users);
+  };
 
-  // Handle ?new=1 quick-create
+  useEffect(() => { load(); loadUsers(); }, []);
+
   useEffect(() => {
     if (params.get('new') === '1' && editing == null) {
       openNew();
@@ -109,17 +117,9 @@ const NewsAdmin = () => {
 
   const onTitleChange = (e) => {
     const title = e.target.value;
-    setForm((f) => ({
-      ...f,
-      title,
-      slug: slugDirty ? f.slug : slugify(title),
-    }));
+    setForm((f) => ({ ...f, title, slug: slugDirty ? f.slug : slugify(title) }));
   };
-
-  const onSlugChange = (e) => {
-    setSlugDirty(true);
-    setField('slug', slugify(e.target.value));
-  };
+  const onSlugChange = (e) => { setSlugDirty(true); setField('slug', slugify(e.target.value)); };
 
   const buildPayload = (overrides = {}) => {
     const merged = { ...form, ...overrides };
@@ -131,10 +131,9 @@ const NewsAdmin = () => {
       excerpt: merged.excerpt?.trim() || null,
       content: merged.content?.trim() || null,
       image_url: merged.image_url?.trim() || null,
-      is_published: !!merged.is_published,
-      published_at: merged.published_at
-        ? new Date(merged.published_at).toISOString()
-        : null,
+      status: merged.status || 'draft',
+      reviewer_id: merged.reviewer_id || null,
+      published_at: merged.published_at ? new Date(merged.published_at).toISOString() : null,
     };
   };
 
@@ -143,20 +142,25 @@ const NewsAdmin = () => {
     const payload = buildPayload(overrides);
     if (!payload.title) { setError('Title is required.'); return false; }
     if (!payload.slug) { setError('Slug is required.'); return false; }
-    if (payload.is_published && !payload.published_at) {
+    if (payload.status === 'under_review' && !payload.reviewer_id) {
+      setError('Assign a reviewer before submitting for review.'); return false;
+    }
+    if (payload.status === 'scheduled') {
+      if (!payload.published_at) { setError('Pick a publish date to schedule.'); return false; }
+      if (new Date(payload.published_at) <= new Date()) {
+        setError('Scheduled date must be in the future.'); return false;
+      }
+    }
+    if (payload.status === 'published' && !payload.published_at) {
       payload.published_at = new Date().toISOString();
     }
-    // Slug uniqueness (client-side pre-check)
     const dup = rows.find((r) => r.slug === payload.slug && r.id !== editing);
     if (dup) { setError(`Slug "${payload.slug}" is already used by "${dup.title}".`); return false; }
 
     setSaving(true);
-    let res;
-    if (editing === 'new') {
-      res = await supabase.from('news_posts').insert([payload]);
-    } else {
-      res = await supabase.from('news_posts').update(payload).eq('id', editing);
-    }
+    const res = editing === 'new'
+      ? await supabase.from('news_posts').insert([payload])
+      : await supabase.from('news_posts').update(payload).eq('id', editing);
     setSaving(false);
     if (res.error) { setError(res.error.message); return false; }
     setNotice('Saved.');
@@ -165,12 +169,11 @@ const NewsAdmin = () => {
     return true;
   };
 
-  const publishNow = () => save({ is_published: true, published_at: toDateTimeInput(new Date().toISOString()) });
-  const saveDraft = () => save({ is_published: false });
-  const schedule = () => {
-    if (!form.published_at) { setError('Pick a publish date to schedule.'); return; }
-    return save({ is_published: true });
-  };
+  const submitForReview = () => save({ status: 'under_review' });
+  const approvePublish = () => save({ status: 'published' });
+  const publishNow = () => save({ status: 'published', published_at: toDateTimeInput(new Date().toISOString()) });
+  const schedule = () => save({ status: 'scheduled' });
+  const saveDraft = () => save({ status: 'draft' });
 
   const doDelete = async (id) => {
     setSaving(true);
@@ -187,17 +190,20 @@ const NewsAdmin = () => {
     catch { setError('Could not copy link.'); }
   };
 
-  const filtered = useMemo(() => {
-    return rows.filter((r) => {
-      if (statusTab !== 'all' && statusOf(r) !== statusTab) return false;
-      if (search && !r.title.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    });
-  }, [rows, statusTab, search]);
+  const userLabel = (id) => {
+    const u = users.find((x) => x.id === id);
+    return u?.email || (id ? id.slice(0, 8) : '—');
+  };
+
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (statusTab !== 'all' && r.status !== statusTab) return false;
+    if (search && !r.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  }), [rows, statusTab, search]);
 
   const counts = useMemo(() => {
-    const c = { all: rows.length, draft: 0, scheduled: 0, live: 0 };
-    rows.forEach((r) => { c[statusOf(r)] += 1; });
+    const c = { all: rows.length, draft: 0, under_review: 0, scheduled: 0, published: 0 };
+    rows.forEach((r) => { c[r.status] = (c[r.status] || 0) + 1; });
     return c;
   }, [rows]);
 
@@ -227,11 +233,9 @@ const NewsAdmin = () => {
             <h3 className="font-display text-lg text-emerald-deep">
               {editing === 'new' ? 'New post' : 'Edit post'}
             </h3>
-            {editing !== 'new' && (
-              <span className={`text-[10px] tracking-widest uppercase border px-2 py-0.5 ${STATUS_STYLE[statusOf(form)]}`}>
-                {statusOf(form)}
-              </span>
-            )}
+            <span className={`text-[10px] tracking-widest uppercase border px-2 py-0.5 ${STATUS_STYLE[form.status]}`}>
+              {STATUS_LABEL[form.status]}
+            </span>
           </div>
 
           <Field label="Title" required>
@@ -265,22 +269,47 @@ const NewsAdmin = () => {
             <TextArea rows={12} value={form.content || ''} onChange={(e) => setField('content', e.target.value)} />
           </Field>
 
-          <div className="border-t border-line pt-4 mt-4">
-            <Field label="Publish date" hint="Future date = scheduled. Blank = uses 'now' when published.">
+          <div className="border-t border-line pt-4 mt-4 grid sm:grid-cols-2 gap-4">
+            <Field label="Reviewer" hint="Required before submitting for review.">
+              <Select value={form.reviewer_id || ''} onChange={(e) => setField('reviewer_id', e.target.value)}>
+                <option value="">— unassigned —</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.email}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Publish date" hint="Required to schedule; used as go-live time.">
               <TextInput
                 type="datetime-local"
                 value={form.published_at || ''}
                 onChange={(e) => setField('published_at', e.target.value)}
               />
             </Field>
+          </div>
 
-            <div className="flex flex-wrap gap-2 mt-4">
+          <div className="border-t border-line pt-4 mt-2">
+            <p className="eyebrow mb-3">Workflow</p>
+            <div className="flex flex-wrap gap-2">
               <button
-                type="button" disabled={saving} onClick={publishNow}
-                className="text-xs tracking-widest uppercase bg-emerald-deep text-paper px-4 py-2 border border-emerald-deep hover:bg-emerald-deep/90 disabled:opacity-50"
+                type="button" disabled={saving} onClick={saveDraft}
+                className="text-xs tracking-widest uppercase border border-line px-4 py-2 hover:border-gold disabled:opacity-50"
               >
-                {saving ? 'Saving…' : 'Publish now'}
+                Save as draft
               </button>
+              <button
+                type="button" disabled={saving} onClick={submitForReview}
+                className="text-xs tracking-widest uppercase border border-amber-600 text-amber-700 px-4 py-2 hover:bg-amber-600 hover:text-paper disabled:opacity-50"
+              >
+                Submit for review
+              </button>
+              {form.status === 'under_review' && (
+                <button
+                  type="button" disabled={saving} onClick={approvePublish}
+                  className="text-xs tracking-widest uppercase bg-emerald-deep text-paper px-4 py-2 border border-emerald-deep hover:bg-emerald-deep/90 disabled:opacity-50"
+                >
+                  Approve & publish
+                </button>
+              )}
               {form.published_at && (
                 <button
                   type="button" disabled={saving} onClick={schedule}
@@ -290,10 +319,10 @@ const NewsAdmin = () => {
                 </button>
               )}
               <button
-                type="button" disabled={saving} onClick={saveDraft}
-                className="text-xs tracking-widest uppercase border border-line px-4 py-2 hover:border-gold disabled:opacity-50"
+                type="button" disabled={saving} onClick={publishNow}
+                className="text-xs tracking-widest uppercase bg-emerald-deep text-paper px-4 py-2 border border-emerald-deep hover:bg-emerald-deep/90 disabled:opacity-50"
               >
-                Save as draft
+                {saving ? 'Saving…' : 'Publish now'}
               </button>
               {editing !== 'new' && form.slug && (
                 <button
@@ -342,7 +371,6 @@ const NewsAdmin = () => {
       ) : (
         <RowList>
           {filtered.map((r) => {
-            const st = statusOf(r);
             const isConfirming = confirmId === r.id;
             return (
               <Row
@@ -350,14 +378,15 @@ const NewsAdmin = () => {
                 title={
                   <span className="flex items-center gap-2 flex-wrap">
                     <span>{r.title}</span>
-                    <span className={`text-[10px] tracking-widest uppercase border px-2 py-0.5 ${STATUS_STYLE[st]}`}>
-                      {st}
+                    <span className={`text-[10px] tracking-widest uppercase border px-2 py-0.5 ${STATUS_STYLE[r.status]}`}>
+                      {STATUS_LABEL[r.status]}
                     </span>
                   </span>
                 }
                 meta={[
                   r.post_type,
                   r.category,
+                  r.reviewer_id ? `reviewer: ${userLabel(r.reviewer_id)}` : null,
                   r.published_at ? new Date(r.published_at).toLocaleString() : 'no date',
                   `/news/${r.slug}`,
                 ].filter(Boolean).join(' · ')}
