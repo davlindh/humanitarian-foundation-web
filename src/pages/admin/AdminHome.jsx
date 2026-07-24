@@ -21,9 +21,9 @@ const ACTION_LABEL = {
 
 const AdminHome = () => {
   const [counts, setCounts] = useState({});
-  const [news, setNews] = useState({ live: 0, drafts: 0, scheduled: 0 });
+  const [news, setNews] = useState({ published: 0, drafts: 0, scheduled: 0, review: 0 });
   const [activity, setActivity] = useState([]);
-  const [attention, setAttention] = useState({ drafts: 0, scheduled: 0, orphanTasks: 0 });
+  const [attention, setAttention] = useState({ drafts: 0, scheduled: 0, review: 0, orphanTasks: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,12 +32,12 @@ const AdminHome = () => {
       const countPromises = resources.map((r) =>
         supabase.from(r.key).select('*', { count: 'exact', head: true })
       );
-      const now = new Date().toISOString();
-      const [countsRes, liveRes, draftsRes, schedRes, actRes, orphanRes] = await Promise.all([
+      const [countsRes, pubRes, draftsRes, schedRes, reviewRes, actRes, orphanRes] = await Promise.all([
         Promise.all(countPromises),
-        supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('is_published', true).lte('published_at', now),
-        supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('is_published', false),
-        supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('is_published', true).gt('published_at', now),
+        supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+        supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
+        supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('status', 'scheduled'),
+        supabase.from('news_posts').select('*', { count: 'exact', head: true }).eq('status', 'under_review'),
         supabase.from('admin_activity_log').select('id,user_email,table_name,action,record_name,created_at').order('created_at', { ascending: false }).limit(8),
         supabase.from('tasks').select('*', { count: 'exact', head: true }).is('project_id', null),
       ]);
@@ -45,13 +45,14 @@ const AdminHome = () => {
       const nextCounts = {};
       resources.forEach((r, i) => { nextCounts[r.key] = countsRes[i].count ?? 0; });
       setCounts(nextCounts);
-      setNews({ live: liveRes.count ?? 0, drafts: draftsRes.count ?? 0, scheduled: schedRes.count ?? 0 });
+      setNews({ published: pubRes.count ?? 0, drafts: draftsRes.count ?? 0, scheduled: schedRes.count ?? 0, review: reviewRes.count ?? 0 });
       setActivity(actRes.data ?? []);
-      setAttention({ drafts: draftsRes.count ?? 0, scheduled: schedRes.count ?? 0, orphanTasks: orphanRes.count ?? 0 });
+      setAttention({ drafts: draftsRes.count ?? 0, scheduled: schedRes.count ?? 0, review: reviewRes.count ?? 0, orphanTasks: orphanRes.count ?? 0 });
       setLoading(false);
     })();
     return () => { cancelled = true; };
   }, []);
+
 
   return (
     <div>
@@ -72,16 +73,17 @@ const AdminHome = () => {
           </Link>
         ))}
         <Link to="/admin/news" className="block border border-line bg-parchment/40 p-4 hover:border-gold transition col-span-2">
-          <div className="flex items-baseline gap-4">
+          <div className="flex items-baseline gap-4 flex-wrap">
             <div>
-              <div className="text-3xl font-display text-emerald-deep">{loading ? '…' : fmt(news.live)}</div>
-              <div className="text-xs tracking-widest uppercase text-ink-soft mt-1">News · Live</div>
+              <div className="text-3xl font-display text-emerald-deep">{loading ? '…' : fmt(news.published)}</div>
+              <div className="text-xs tracking-widest uppercase text-ink-soft mt-1">News · Published</div>
             </div>
             <div className="text-sm text-ink-soft">
-              {fmt(news.drafts)} drafts · {fmt(news.scheduled)} scheduled
+              {fmt(news.drafts)} drafts · {fmt(news.review)} in review · {fmt(news.scheduled)} scheduled
             </div>
           </div>
         </Link>
+
         <Link to="/admin/roles" className="block border border-line bg-parchment/40 p-4 hover:border-gold transition">
           <div className="font-display text-emerald-deep">Roles</div>
           <div className="text-xs text-ink-soft mt-1">Manage admin access</div>
@@ -141,6 +143,15 @@ const AdminHome = () => {
             </li>
             <li className="p-3 flex justify-between items-center">
               <div>
+                <div className="text-ink">Awaiting review</div>
+                <div className="text-xs text-ink-soft">Posts submitted for approval</div>
+              </div>
+              <Link to="/admin/news?status=under_review" className="text-emerald-deep font-semibold">
+                {fmt(attention.review)} →
+              </Link>
+            </li>
+            <li className="p-3 flex justify-between items-center">
+              <div>
                 <div className="text-ink">Scheduled posts</div>
                 <div className="text-xs text-ink-soft">Future publish date</div>
               </div>
@@ -148,6 +159,7 @@ const AdminHome = () => {
                 {fmt(attention.scheduled)} →
               </Link>
             </li>
+
             <li className="p-3 flex justify-between items-center">
               <div>
                 <div className="text-ink">Unassigned tasks</div>
