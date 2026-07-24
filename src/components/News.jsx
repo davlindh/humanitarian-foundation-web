@@ -1,63 +1,83 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { supabase } from '../integrations/supabase/client';
 
-const blogPosts = [
-  {
-    title: 'Empowering communities through clean water',
-    date: 'October 10, 2023',
-    category: 'Field Report',
-    excerpt: 'How HUFIDA is providing safe drinking water and long-term operator training in rural regions.',
-    content: 'Detailed field notes on how the water programme was scoped with village councils, how boreholes were sited, and how local operators are being trained to run and maintain them for the next decade.',
-    image: '/images/blog1.jpg',
-  },
-  {
-    title: 'Educational programmes making a difference',
-    date: 'September 20, 2023',
-    category: 'Programme Update',
-    excerpt: 'Five new schools, forty new teachers, and a curriculum built with local communities.',
-    content: 'A summary of the year\'s work in the education programme: schools completed, cohort profiles, teacher-training results, and the materials produced with district education officers.',
-    image: '/images/blog2.jpg',
-  },
-  {
-    title: 'DIY solar water heater — a field guide',
-    date: 'November 5, 2023',
-    category: 'Technical Guide',
-    excerpt: 'A step-by-step guide to building a low-cost solar water heater from locally available materials.',
-    content: 'Materials list, tool requirements, and full assembly instructions for a solar water heater that can be built and maintained by a village technician.',
-    image: '/images/blog3.jpg',
-  },
-  {
-    title: 'Composting, from the ground up',
-    date: 'November 12, 2023',
-    category: 'Technical Guide',
-    excerpt: 'Simple, low-cost composting methods for households and small farms.',
-    content: 'The composting approaches our agricultural teams recommend for smallholder plots, including layout, materials, and troubleshooting.',
-    image: '/images/blog4.jpg',
-  },
-];
+const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString(undefined, {
+  year: 'numeric', month: 'long', day: 'numeric',
+}) : '';
 
-const pressReleases = [
-  {
-    title: 'HUFIDA launches new healthcare initiative',
-    date: 'August 15, 2023',
-    content: 'HUFIDA is launching a healthcare initiative focused on medical supply chains, health-worker training, and the renovation of clinical infrastructure across four districts.',
-  },
-  {
-    title: 'HUFIDA joins the Great Lakes WASH Coalition',
-    date: 'July 30, 2023',
-    content: 'A regional coordination partnership on water, sanitation, and hygiene standards. HUFIDA joins as a delivery partner covering three districts in the coalition\'s eastern zone.',
-  },
-];
+const PostView = ({ slug }) => {
+  const [post, setPost] = useState(null);
+  const [state, setState] = useState('loading');
+
+  useEffect(() => {
+    let c = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('news_posts').select('*').eq('slug', slug).maybeSingle();
+      if (c) return;
+      if (error || !data) setState('missing');
+      else { setPost(data); setState('ready'); }
+    })();
+    return () => { c = true; };
+  }, [slug]);
+
+  if (state === 'loading') return <p className="text-ink-soft">Loading…</p>;
+  if (state === 'missing') return (
+    <div className="border border-dashed border-line p-10 text-center">
+      <p className="text-ink-soft mb-4">Post not found.</p>
+      <Link to="/news" className="text-emerald-deep underline">← Back to news</Link>
+    </div>
+  );
+
+  return (
+    <article className="max-w-3xl mx-auto">
+      <Link to="/news" className="eyebrow inline-block mb-6 hover:text-emerald-deep">← All news</Link>
+      <p className="eyebrow">{post.category || post.post_type} · {formatDate(post.published_at || post.created_at)}</p>
+      <hr className="rule-gold" />
+      <h1 className="font-display text-3xl md:text-5xl mb-8 text-emerald-deep">{post.title}</h1>
+      {post.image_url && (
+        <img src={post.image_url} alt={post.title} className="w-full aspect-[16/9] object-cover border border-line mb-8" />
+      )}
+      {post.excerpt && <p className="text-lg text-ink-soft leading-relaxed mb-6">{post.excerpt}</p>}
+      {post.content && (
+        <div className="prose-hufida text-ink leading-relaxed whitespace-pre-wrap">{post.content}</div>
+      )}
+    </article>
+  );
+};
 
 const News = () => {
+  const { slug } = useParams();
   const [sortType, setSortType] = useState('date');
   const [expanded, setExpanded] = useState({});
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (slug) return;
+    let c = false;
+    (async () => {
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from('news_posts')
+        .select('*')
+        .eq('is_published', true)
+        .lte('published_at', now)
+        .order('published_at', { ascending: false });
+      if (!c) { setPosts(data || []); setLoading(false); }
+    })();
+    return () => { c = true; };
+  }, [slug]);
+
+  if (slug) return <PostView slug={slug} />;
+
   const toggle = (k) => setExpanded((p) => ({ ...p, [k]: !p[k] }));
-  const sortedPosts = [...blogPosts].sort((a, b) => new Date(b.date) - new Date(a.date));
-  const sortedReleases = [...pressReleases].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const blogs = posts.filter((p) => (p.post_type || 'blog') === 'blog');
+  const releases = posts.filter((p) => p.post_type === 'press');
 
   return (
     <div className="space-y-24">
-      {/* Achievements infographic */}
       <section>
         <p className="eyebrow">Recent Achievements</p>
         <hr className="rule-gold" />
@@ -65,13 +85,12 @@ const News = () => {
         <figure className="border border-line bg-parchment/40 p-6">
           <img
             src="/images/infographics/achievements-infographic.png"
-            alt="HUFIDA achievements — communities reached, programmes delivered"
+            alt="HUFIDA achievements"
             className="w-full h-auto"
           />
         </figure>
       </section>
 
-      {/* Blog list */}
       <section className="border-t border-line pt-16">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
           <div>
@@ -90,55 +109,84 @@ const News = () => {
             </select>
           </label>
         </div>
-        <div className="divide-y divide-line">
-          {sortedPosts.map((post, i) => (
-            <article key={post.title} className="py-10 grid md:grid-cols-[240px_1fr] gap-8">
-              <img
-                src={post.image}
-                alt={post.title}
-                className="w-full aspect-[4/3] object-cover border border-line"
-              />
-              <div>
-                <p className="eyebrow">{post.category} · {post.date}</p>
-                <h3 className="text-2xl md:text-3xl mt-2 mb-3">{post.title}</h3>
-                <p className="text-ink-soft leading-relaxed">
-                  {expanded[`b${i}`] ? post.content : post.excerpt}
-                </p>
-                <button
-                  onClick={() => toggle(`b${i}`)}
-                  className="mt-4 text-emerald-deep font-semibold underline underline-offset-4"
-                >
-                  {expanded[`b${i}`] ? 'Read less ←' : 'Read more →'}
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+        {loading ? (
+          <p className="text-ink-soft">Loading…</p>
+        ) : blogs.length === 0 ? (
+          <div className="border border-dashed border-line p-10 text-center text-ink-soft">
+            No posts yet. Check back soon.
+          </div>
+        ) : (
+          <div className="divide-y divide-line">
+            {blogs.map((post, i) => (
+              <article key={post.id} className="py-10 grid md:grid-cols-[240px_1fr] gap-8">
+                {post.image_url && (
+                  <img
+                    src={post.image_url}
+                    alt={post.title}
+                    className="w-full aspect-[4/3] object-cover border border-line"
+                  />
+                )}
+                <div className={post.image_url ? '' : 'md:col-span-2'}>
+                  <p className="eyebrow">
+                    {[post.category, formatDate(post.published_at || post.created_at)]
+                      .filter(Boolean).join(' · ')}
+                  </p>
+                  <h3 className="text-2xl md:text-3xl mt-2 mb-3">
+                    <Link to={`/news/${post.slug}`} className="hover:text-emerald-deep">
+                      {post.title}
+                    </Link>
+                  </h3>
+                  <p className="text-ink-soft leading-relaxed">
+                    {expanded[`b${i}`] ? (post.content || post.excerpt) : (post.excerpt || (post.content || '').slice(0, 200))}
+                  </p>
+                  <div className="mt-4 flex gap-4">
+                    {post.content && (
+                      <button
+                        onClick={() => toggle(`b${i}`)}
+                        className="text-emerald-deep font-semibold underline underline-offset-4"
+                      >
+                        {expanded[`b${i}`] ? 'Read less ←' : 'Read more →'}
+                      </button>
+                    )}
+                    <Link to={`/news/${post.slug}`} className="text-ink-soft underline underline-offset-4 hover:text-emerald-deep">
+                      Permalink
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Press releases */}
-      <section className="border-t border-line pt-16">
-        <p className="eyebrow">Press Releases</p>
-        <hr className="rule-gold" />
-        <h2 className="text-3xl md:text-4xl mb-10">Official announcements.</h2>
-        <div className="space-y-6">
-          {sortedReleases.map((r, i) => (
-            <article key={r.title} className="border border-line p-8">
-              <p className="eyebrow">{r.date}</p>
-              <h3 className="text-xl md:text-2xl mt-2 mb-3">{r.title}</h3>
-              <p className="text-ink-soft leading-relaxed">
-                {expanded[`p${i}`] ? r.content : r.content.slice(0, 140) + '…'}
-              </p>
-              <button
-                onClick={() => toggle(`p${i}`)}
-                className="mt-4 text-emerald-deep font-semibold underline underline-offset-4"
-              >
-                {expanded[`p${i}`] ? 'Read less ←' : 'Read full release →'}
-              </button>
-            </article>
-          ))}
-        </div>
-      </section>
+      {releases.length > 0 && (
+        <section className="border-t border-line pt-16">
+          <p className="eyebrow">Press Releases</p>
+          <hr className="rule-gold" />
+          <h2 className="text-3xl md:text-4xl mb-10">Official announcements.</h2>
+          <div className="space-y-6">
+            {releases.map((r, i) => (
+              <article key={r.id} className="border border-line p-8">
+                <p className="eyebrow">{formatDate(r.published_at || r.created_at)}</p>
+                <h3 className="text-xl md:text-2xl mt-2 mb-3">
+                  <Link to={`/news/${r.slug}`} className="hover:text-emerald-deep">{r.title}</Link>
+                </h3>
+                <p className="text-ink-soft leading-relaxed">
+                  {expanded[`p${i}`] ? (r.content || r.excerpt) : ((r.excerpt || r.content || '').slice(0, 200) + '…')}
+                </p>
+                {r.content && (
+                  <button
+                    onClick={() => toggle(`p${i}`)}
+                    className="mt-4 text-emerald-deep font-semibold underline underline-offset-4"
+                  >
+                    {expanded[`p${i}`] ? 'Read less ←' : 'Read full release →'}
+                  </button>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };

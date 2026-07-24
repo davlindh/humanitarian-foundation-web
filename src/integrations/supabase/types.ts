@@ -56,24 +56,30 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          logo_url: string | null
           name: string
           updated_at: string
+          website: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
+          logo_url?: string | null
           name: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -127,8 +133,10 @@ export type Database = {
           excerpt: string | null
           id: string
           image_url: string | null
+          is_published: boolean
           post_type: string
-          published_at: string
+          published_at: string | null
+          slug: string | null
           title: string
           updated_at: string
         }
@@ -140,8 +148,10 @@ export type Database = {
           excerpt?: string | null
           id?: string
           image_url?: string | null
+          is_published?: boolean
           post_type?: string
-          published_at?: string
+          published_at?: string | null
+          slug?: string | null
           title: string
           updated_at?: string
         }
@@ -153,8 +163,10 @@ export type Database = {
           excerpt?: string | null
           id?: string
           image_url?: string | null
+          is_published?: boolean
           post_type?: string
-          published_at?: string
+          published_at?: string | null
+          slug?: string | null
           title?: string
           updated_at?: string
         }
@@ -162,6 +174,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string
           created_by: string | null
           email: string | null
@@ -171,6 +185,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -180,6 +196,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -192,27 +210,36 @@ export type Database = {
       }
       projects: {
         Row: {
+          cover_image: string | null
           created_at: string
           created_by: string | null
           description: string | null
           id: string
+          location: string | null
           name: string
+          status: string | null
           updated_at: string
         }
         Insert: {
+          cover_image?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
+          location?: string | null
           name: string
+          status?: string | null
           updated_at?: string
         }
         Update: {
+          cover_image?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
+          location?: string | null
           name?: string
+          status?: string | null
           updated_at?: string
         }
         Relationships: []
