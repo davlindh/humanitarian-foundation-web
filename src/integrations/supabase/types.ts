@@ -136,7 +136,11 @@ export type Database = {
           is_published: boolean
           post_type: string
           published_at: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
           slug: string | null
+          status: Database["public"]["Enums"]["news_status"]
+          submitted_at: string | null
           title: string
           updated_at: string
         }
@@ -151,7 +155,11 @@ export type Database = {
           is_published?: boolean
           post_type?: string
           published_at?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
           slug?: string | null
+          status?: Database["public"]["Enums"]["news_status"]
+          submitted_at?: string | null
           title: string
           updated_at?: string
         }
@@ -166,7 +174,11 @@ export type Database = {
           is_published?: boolean
           post_type?: string
           published_at?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
           slug?: string | null
+          status?: Database["public"]["Enums"]["news_status"]
+          submitted_at?: string | null
           title?: string
           updated_at?: string
         }
@@ -345,6 +357,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"
+      news_status: "draft" | "under_review" | "scheduled" | "published"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -473,6 +486,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "editor", "viewer"],
+      news_status: ["draft", "under_review", "scheduled", "published"],
     },
   },
 } as const
