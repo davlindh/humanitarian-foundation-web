@@ -56,7 +56,7 @@ const AdminActivity = () => {
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
-          <button onClick={load} className="btn btn-sm btn-outline rounded-none">Refresh</button>
+          <button onClick={load} className="btn btn-sm btn-outline">Refresh</button>
         </div>
       </div>
 

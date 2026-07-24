@@ -49,12 +49,12 @@ const NavigationBar = () => {
           ))}
           <Link
             to="/get-involved#donate"
-            className="ml-3 btn btn-primary btn-sm rounded-none font-display tracking-wide"
+            className="ml-3 btn btn-primary btn-sm font-display tracking-wide"
           >
             Donate
           </Link>
           {user ? (
-            <Link to="/admin" className="ml-1 btn btn-ghost btn-sm rounded-none">Admin</Link>
+            <Link to="/admin" className="ml-1 btn btn-ghost btn-sm">Admin</Link>
           ) : null}
         </nav>
 
@@ -87,12 +87,12 @@ const NavigationBar = () => {
             ))}
             <Link
               to="/get-involved#donate"
-              className="mt-4 btn btn-primary rounded-none font-display"
+              className="mt-4 btn btn-primary font-display"
             >
               Donate
             </Link>
             {user && (
-              <Link to="/admin" className="mt-2 btn btn-outline rounded-none">Admin</Link>
+              <Link to="/admin" className="mt-2 btn btn-outline">Admin</Link>
             )}
           </nav>
         </div>

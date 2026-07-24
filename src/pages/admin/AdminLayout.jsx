@@ -35,7 +35,7 @@ const AdminLayout = () => {
           </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-ink-soft">{user?.email}</span>
-            <button onClick={signOut} className="btn btn-sm btn-outline rounded-none">
+            <button onClick={signOut} className="btn btn-sm btn-outline">
               Sign out
             </button>
           </div>

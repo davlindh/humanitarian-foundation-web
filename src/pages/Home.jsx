@@ -61,10 +61,10 @@ const Home = () => {
             East and Central Africa — measured, transparent, and owned by the people they change.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/get-involved#donate" className="btn btn-primary rounded-none font-display tracking-wide">
+            <Link to="/get-involved#donate" className="btn btn-primary font-display tracking-wide">
               Support the work
             </Link>
-            <Link to="/projects" className="btn btn-outline rounded-none font-display tracking-wide">
+            <Link to="/projects" className="btn btn-outline font-display tracking-wide">
               Explore projects
             </Link>
           </div>
@@ -161,7 +161,7 @@ const Home = () => {
                 honest — and keep donors, partners, and the people we serve informed.
               </p>
             </div>
-            <Link to="/about-us" className="inline-block mt-6 btn btn-outline rounded-none">
+            <Link to="/about-us" className="inline-block mt-6 btn btn-outline">
               How we work
             </Link>
           </div>
@@ -194,13 +194,13 @@ const Home = () => {
             The work continues because people choose to support it.
           </h2>
           <div className="mt-8 flex flex-wrap gap-3 justify-center">
-            <Link to="/get-involved#donate" className="btn btn-primary rounded-none font-display">
+            <Link to="/get-involved#donate" className="btn btn-primary font-display">
               Donate
             </Link>
-            <Link to="/get-involved" className="btn btn-outline rounded-none font-display">
+            <Link to="/get-involved" className="btn btn-outline font-display">
               Volunteer
             </Link>
-            <Link to="/partners" className="btn btn-ghost rounded-none font-display">
+            <Link to="/partners" className="btn btn-ghost font-display">
               Partner with us
             </Link>
           </div>

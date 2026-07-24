@@ -45,7 +45,7 @@ const AuthPage = () => {
   return (
     <div className="min-h-[80dvh] bg-parchment/40">
       <div className="container-wide py-16">
-        <div className="max-w-md mx-auto bg-base-100 border border-line rounded-none shadow-sm p-8">
+        <div className="max-w-md mx-auto bg-base-100 border border-line shadow-sm p-8">
           <p className="eyebrow">Team access</p>
           <hr className="rule-gold" />
           <h1 className="text-3xl mb-2">
@@ -62,7 +62,7 @@ const AuthPage = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input input-bordered w-full rounded-none"
+                className="input input-bordered w-full"
                 autoComplete="email"
               />
             </label>
@@ -74,7 +74,7 @@ const AuthPage = () => {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input input-bordered w-full rounded-none"
+                className="input input-bordered w-full"
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               />
             </label>
@@ -93,7 +93,7 @@ const AuthPage = () => {
             <button
               type="submit"
               disabled={busy}
-              className="btn btn-primary w-full rounded-none"
+              className="btn btn-primary w-full"
             >
               {busy ? '...' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
