@@ -91,26 +91,7 @@ const AboutUs = () => {
           <p className="text-ink-soft">Team profiles coming soon.</p>
         ) : (
           <div className="grid md:grid-cols-2 gap-10">
-            {team.map((m) => (
-              <article key={m.id} className="grid grid-cols-[120px_1fr] gap-6 items-start">
-                {m.avatar_url ? (
-                  <img
-                    src={m.avatar_url}
-                    alt={m.name}
-                    className="w-[120px] h-[120px] object-cover border border-line grayscale hover:grayscale-0 transition"
-                  />
-                ) : (
-                  <div className="w-[120px] h-[120px] border border-line bg-parchment/40 flex items-center justify-center text-ink-soft text-xs">
-                    No photo
-                  </div>
-                )}
-                <div>
-                  <h3 className="text-xl mb-1">{m.name}</h3>
-                  {m.role && <p className="eyebrow mb-3">{m.role}</p>}
-                  {m.bio && <p className="text-ink-soft leading-relaxed">{m.bio}</p>}
-                </div>
-              </article>
-            ))}
+            {team.map((m) => <TeamMember key={m.id} m={m} />)}
           </div>
         )}
       </section>

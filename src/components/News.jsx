@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
 
 const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString(undefined, {
@@ -8,16 +8,40 @@ const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString(undefined, {
 
 const PostView = ({ slug }) => {
   const [post, setPost] = useState(null);
+  const [prev, setPrev] = useState(null);
+  const [next, setNext] = useState(null);
+  const [related, setRelated] = useState([]);
   const [state, setState] = useState('loading');
 
   useEffect(() => {
     let c = false;
     (async () => {
+      setState('loading');
       const { data, error } = await supabase
         .from('news_posts').select('*').eq('slug', slug).maybeSingle();
       if (c) return;
-      if (error || !data) setState('missing');
-      else { setPost(data); setState('ready'); }
+      if (error || !data) { setState('missing'); return; }
+      setPost(data);
+      setState('ready');
+
+      const pivot = data.published_at || data.created_at;
+      const [prevRes, nextRes, relRes] = await Promise.all([
+        supabase.from('news_posts').select('slug,title,published_at')
+          .eq('is_published', true).lt('published_at', pivot)
+          .order('published_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('news_posts').select('slug,title,published_at')
+          .eq('is_published', true).gt('published_at', pivot)
+          .order('published_at', { ascending: true }).limit(1).maybeSingle(),
+        data.category
+          ? supabase.from('news_posts').select('slug,title,published_at,category,image_url,excerpt')
+              .eq('is_published', true).eq('category', data.category).neq('id', data.id)
+              .order('published_at', { ascending: false }).limit(3)
+          : Promise.resolve({ data: [] }),
+      ]);
+      if (c) return;
+      setPrev(prevRes.data || null);
+      setNext(nextRes.data || null);
+      setRelated(relRes.data || []);
     })();
     return () => { c = true; };
   }, [slug]);
@@ -43,38 +67,102 @@ const PostView = ({ slug }) => {
       {post.content && (
         <div className="prose-hufida text-ink leading-relaxed whitespace-pre-wrap">{post.content}</div>
       )}
+
+      <nav className="mt-16 pt-8 border-t border-line grid sm:grid-cols-2 gap-6" aria-label="Post navigation">
+        <div>
+          {prev && (
+            <Link to={`/news/${prev.slug}`} className="block group">
+              <p className="eyebrow">← Previous</p>
+              <p className="mt-1 font-semibold text-ink group-hover:text-emerald-deep">{prev.title}</p>
+            </Link>
+          )}
+        </div>
+        <div className="sm:text-right">
+          {next && (
+            <Link to={`/news/${next.slug}`} className="block group">
+              <p className="eyebrow">Next →</p>
+              <p className="mt-1 font-semibold text-ink group-hover:text-emerald-deep">{next.title}</p>
+            </Link>
+          )}
+        </div>
+      </nav>
+
+      {related.length > 0 && (
+        <section className="mt-16 pt-8 border-t border-line">
+          <p className="eyebrow">More from {post.category}</p>
+          <hr className="rule-gold" />
+          <ul className="mt-6 space-y-6">
+            {related.map((r) => (
+              <li key={r.slug}>
+                <div className="text-xs uppercase tracking-widest text-ink-soft">
+                  {formatDate(r.published_at)}
+                </div>
+                <Link
+                  to={`/news/${r.slug}`}
+                  className="mt-1 block font-semibold text-emerald-deep hover:text-emerald"
+                >
+                  {r.title}
+                </Link>
+                {r.excerpt && <p className="text-sm text-ink-soft mt-1 line-clamp-2">{r.excerpt}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </article>
   );
 };
 
 const News = () => {
   const { slug } = useParams();
-  const [sortType, setSortType] = useState('date');
-  const [expanded, setExpanded] = useState({});
+  const [searchParams, setSearchParams] = useSearchParams();
+  const category = searchParams.get('category') || '';
   const [posts, setPosts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (slug) return;
     let c = false;
     (async () => {
+      setLoading(true);
       const now = new Date().toISOString();
-      const { data } = await supabase
+      let q = supabase
         .from('news_posts')
         .select('*')
         .eq('is_published', true)
         .lte('published_at', now)
         .order('published_at', { ascending: false });
+      if (category) q = q.eq('category', category);
+      const { data } = await q;
       if (!c) { setPosts(data || []); setLoading(false); }
+    })();
+    return () => { c = true; };
+  }, [slug, category]);
+
+  useEffect(() => {
+    if (slug) return;
+    let c = false;
+    (async () => {
+      const { data } = await supabase
+        .from('news_posts').select('category').eq('is_published', true).not('category', 'is', null);
+      if (c) return;
+      const uniq = Array.from(new Set((data || []).map((r) => r.category).filter(Boolean))).sort();
+      setCategories(uniq);
     })();
     return () => { c = true; };
   }, [slug]);
 
   if (slug) return <PostView slug={slug} />;
 
-  const toggle = (k) => setExpanded((p) => ({ ...p, [k]: !p[k] }));
   const blogs = posts.filter((p) => (p.post_type || 'blog') === 'blog');
   const releases = posts.filter((p) => p.post_type === 'press');
+
+  const setCategory = (v) => {
+    const next = new URLSearchParams(searchParams);
+    if (v) next.set('category', v); else next.delete('category');
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <div className="space-y-24">
@@ -98,33 +186,40 @@ const News = () => {
             <hr className="rule-gold" />
             <h2 className="text-3xl md:text-4xl">Reports, guides, and updates.</h2>
           </div>
-          <label className="text-sm text-ink-soft">
-            <span className="eyebrow mr-2">Sort</span>
-            <select
-              onChange={(e) => setSortType(e.target.value)}
-              value={sortType}
-              className="border border-line bg-transparent px-3 py-2 text-ink"
-            >
-              <option value="date">Newest first</option>
-            </select>
-          </label>
+          {categories.length > 0 && (
+            <label className="text-sm text-ink-soft">
+              <span className="eyebrow mr-2">Category</span>
+              <select
+                onChange={(e) => setCategory(e.target.value)}
+                value={category}
+                className="border border-line bg-transparent px-3 py-2 text-ink"
+              >
+                <option value="">All</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
         {loading ? (
           <p className="text-ink-soft">Loading…</p>
         ) : blogs.length === 0 ? (
           <div className="border border-dashed border-line p-10 text-center text-ink-soft">
-            No posts yet. Check back soon.
+            {category ? `No posts in “${category}” yet.` : 'No posts yet. Check back soon.'}
           </div>
         ) : (
           <div className="divide-y divide-line">
-            {blogs.map((post, i) => (
+            {blogs.map((post) => (
               <article key={post.id} className="py-10 grid md:grid-cols-[240px_1fr] gap-8">
                 {post.image_url && (
-                  <img
-                    src={post.image_url}
-                    alt={post.title}
-                    className="w-full aspect-[4/3] object-cover border border-line"
-                  />
+                  <Link to={`/news/${post.slug}`} className="block">
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="w-full aspect-[4/3] object-cover border border-line"
+                    />
+                  </Link>
                 )}
                 <div className={post.image_url ? '' : 'md:col-span-2'}>
                   <p className="eyebrow">
@@ -136,22 +231,15 @@ const News = () => {
                       {post.title}
                     </Link>
                   </h3>
-                  <p className="text-ink-soft leading-relaxed">
-                    {expanded[`b${i}`] ? (post.content || post.excerpt) : (post.excerpt || (post.content || '').slice(0, 200))}
-                  </p>
-                  <div className="mt-4 flex gap-4">
-                    {post.content && (
-                      <button
-                        onClick={() => toggle(`b${i}`)}
-                        className="text-emerald-deep font-semibold underline underline-offset-4"
-                      >
-                        {expanded[`b${i}`] ? 'Read less ←' : 'Read more →'}
-                      </button>
-                    )}
-                    <Link to={`/news/${post.slug}`} className="text-ink-soft underline underline-offset-4 hover:text-emerald-deep">
-                      Permalink
-                    </Link>
-                  </div>
+                  {post.excerpt && (
+                    <p className="text-ink-soft leading-relaxed line-clamp-3">{post.excerpt}</p>
+                  )}
+                  <Link
+                    to={`/news/${post.slug}`}
+                    className="mt-4 inline-block text-emerald-deep font-semibold underline underline-offset-4"
+                  >
+                    Read more →
+                  </Link>
                 </div>
               </article>
             ))}
@@ -165,23 +253,21 @@ const News = () => {
           <hr className="rule-gold" />
           <h2 className="text-3xl md:text-4xl mb-10">Official announcements.</h2>
           <div className="space-y-6">
-            {releases.map((r, i) => (
+            {releases.map((r) => (
               <article key={r.id} className="border border-line p-8">
                 <p className="eyebrow">{formatDate(r.published_at || r.created_at)}</p>
                 <h3 className="text-xl md:text-2xl mt-2 mb-3">
                   <Link to={`/news/${r.slug}`} className="hover:text-emerald-deep">{r.title}</Link>
                 </h3>
-                <p className="text-ink-soft leading-relaxed">
-                  {expanded[`p${i}`] ? (r.content || r.excerpt) : ((r.excerpt || r.content || '').slice(0, 200) + '…')}
-                </p>
-                {r.content && (
-                  <button
-                    onClick={() => toggle(`p${i}`)}
-                    className="mt-4 text-emerald-deep font-semibold underline underline-offset-4"
-                  >
-                    {expanded[`p${i}`] ? 'Read less ←' : 'Read full release →'}
-                  </button>
+                {r.excerpt && (
+                  <p className="text-ink-soft leading-relaxed line-clamp-3">{r.excerpt}</p>
                 )}
+                <Link
+                  to={`/news/${r.slug}`}
+                  className="mt-4 inline-block text-emerald-deep font-semibold underline underline-offset-4"
+                >
+                  Read full release →
+                </Link>
               </article>
             ))}
           </div>

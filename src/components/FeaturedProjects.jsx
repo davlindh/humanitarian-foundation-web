@@ -30,8 +30,8 @@ const FeaturedProjects = () => {
       </div>
       <div className="grid md:grid-cols-3 gap-6">
         {rows.map((p) => (
-          <article key={p.id} className="border border-line group">
-            <div className="aspect-[4/3] overflow-hidden bg-parchment/40">
+          <article key={p.id} className="border border-line group flex flex-col">
+            <Link to={`/projects/${p.slug}`} className="aspect-[4/3] overflow-hidden bg-parchment/40 block">
               {p.cover_image ? (
                 <img
                   src={p.cover_image}
@@ -41,13 +41,21 @@ const FeaturedProjects = () => {
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-ink-soft">No image</div>
               )}
-            </div>
-            <div className="p-6">
+            </Link>
+            <div className="p-6 flex-1 flex flex-col">
               {p.location && <p className="eyebrow">{p.location}</p>}
-              <h3 className="text-xl mt-2 mb-2">{p.name}</h3>
+              <h3 className="text-xl mt-2 mb-2">
+                <Link to={`/projects/${p.slug}`} className="hover:text-emerald-deep">{p.name}</Link>
+              </h3>
               {p.description && (
                 <p className="text-ink-soft text-sm leading-relaxed line-clamp-3">{p.description}</p>
               )}
+              <Link
+                to={`/projects/${p.slug}`}
+                className="mt-4 text-sm text-emerald-deep font-semibold underline underline-offset-4"
+              >
+                Learn more →
+              </Link>
             </div>
           </article>
         ))}

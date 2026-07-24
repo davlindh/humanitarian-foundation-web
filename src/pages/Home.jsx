@@ -1,35 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-const featured = {
-  eyebrow: 'Featured Program',
-  title: 'Clean water for 10,000 people across rural Kenya',
-  lead:
-    'Working with village councils and district health offices to build durable borehole systems and train local operators — moving communities from unsafe surface water to reliable, tested supply.',
-  progress: 70,
-  href: '/projects',
-};
-
-const supporting = [
-  {
-    eyebrow: 'Education',
-    title: 'Five new primary schools underway in Uganda',
-    excerpt:
-      'A cohort of 1,000 students and 40 teachers now working from purpose-built classrooms with locally produced materials.',
-    stat: '1,000',
-    statLabel: 'students reached',
-    href: '/projects',
-  },
-  {
-    eyebrow: 'Healthcare',
-    title: 'Three health centres renovated and re-equipped',
-    excerpt:
-      'Refurbished maternity and outpatient wings serving four districts, staffed and supplied to national standards.',
-    stat: '80%',
-    statLabel: 'programme complete',
-    href: '/projects',
-  },
-];
+import { supabase } from '../integrations/supabase/client';
 
 const stats = [
   { value: '15+', label: 'Years in the field' },
@@ -38,13 +9,39 @@ const stats = [
   { value: '9', label: 'Countries' },
 ];
 
-const news = [
-  { date: 'Jul 2026', title: 'HUFIDA joins WASH coalition for the Great Lakes region', href: '/news' },
-  { date: 'Jun 2026', title: '2025 impact report published', href: '/news' },
-  { date: 'May 2026', title: 'New five-year partnership with district ministries', href: '/news' },
-];
+const statusProgress = { planned: 15, active: 60, completed: 100, paused: 40 };
+
+const formatMonthYear = (iso) =>
+  iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '';
 
 const Home = () => {
+  const [featured, setFeatured] = useState(null);
+  const [supporting, setSupporting] = useState([]);
+  const [latest, setLatest] = useState([]);
+
+  useEffect(() => {
+    let c = false;
+    (async () => {
+      const [feat, all, news] = await Promise.all([
+        supabase.from('projects').select('*').eq('is_featured', true).limit(1).maybeSingle(),
+        supabase.from('projects').select('*').neq('status', 'completed')
+          .order('created_at', { ascending: false }).limit(4),
+        supabase.from('news_posts').select('slug,title,published_at,created_at')
+          .eq('is_published', true).lte('published_at', new Date().toISOString())
+          .order('published_at', { ascending: false }).limit(3),
+      ]);
+      if (c) return;
+      const featuredRow = feat.data || (all.data && all.data[0]) || null;
+      setFeatured(featuredRow);
+      const rest = (all.data || []).filter((p) => !featuredRow || p.id !== featuredRow.id).slice(0, 2);
+      setSupporting(rest);
+      setLatest(news.data || []);
+    })();
+    return () => { c = true; };
+  }, []);
+
+  const featuredProgress = featured ? (statusProgress[featured.status] ?? 50) : 0;
+
   return (
     <div className="bg-surface">
       {/* HERO */}
@@ -72,60 +69,68 @@ const Home = () => {
       </section>
 
       {/* MAGAZINE: featured + supporting */}
-      <section className="section border-b border-line">
-        <div className="container-wide">
-          <div className="grid lg:grid-cols-3 gap-10 lg:gap-14">
-            {/* Featured (2/3) */}
-            <article className="lg:col-span-2 border-l-4 border-gold pl-6 md:pl-10">
-              <p className="eyebrow">{featured.eyebrow}</p>
-              <h2 className="text-3xl md:text-5xl mt-2 mb-4">{featured.title}</h2>
-              <p className="text-lg text-ink-soft leading-relaxed max-w-2xl">
-                {featured.lead}
-              </p>
-              <div className="mt-8 max-w-md">
-                <div className="flex justify-between text-sm text-ink-soft mb-2">
-                  <span className="font-semibold text-emerald-deep">Programme progress</span>
-                  <span>{featured.progress}%</span>
-                </div>
-                <div
-                  className="h-2 bg-base-300"
-                  role="progressbar"
-                  aria-valuenow={featured.progress}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                >
-                  <div className="h-full bg-emerald" style={{ width: `${featured.progress}%` }} />
-                </div>
-              </div>
-              <Link
-                to={featured.href}
-                className="inline-block mt-8 text-emerald-deep font-semibold underline underline-offset-4"
-              >
-                Read the full programme brief →
-              </Link>
-            </article>
-
-            {/* Supporting (1/3 stack) */}
-            <aside className="space-y-8">
-              {supporting.map((s) => (
-                <article key={s.title} className="border-t border-line pt-6">
-                  <p className="eyebrow">{s.eyebrow}</p>
-                  <h3 className="text-xl mt-1 mb-3 leading-snug">
-                    <Link to={s.href} className="hover:text-emerald">{s.title}</Link>
-                  </h3>
-                  <p className="text-sm text-ink-soft mb-4">{s.excerpt}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-display text-2xl text-gold">{s.stat}</span>
-                    <span className="text-xs uppercase tracking-widest text-ink-soft">
-                      {s.statLabel}
-                    </span>
+      {featured && (
+        <section className="section border-b border-line">
+          <div className="container-wide">
+            <div className="grid lg:grid-cols-3 gap-10 lg:gap-14">
+              <article className="lg:col-span-2 border-l-4 border-gold pl-6 md:pl-10">
+                <p className="eyebrow">Featured programme{featured.location ? ` · ${featured.location}` : ''}</p>
+                <h2 className="text-3xl md:text-5xl mt-2 mb-4">
+                  <Link to={`/projects/${featured.slug}`} className="hover:text-emerald-deep">
+                    {featured.name}
+                  </Link>
+                </h2>
+                {featured.description && (
+                  <p className="text-lg text-ink-soft leading-relaxed max-w-2xl line-clamp-4">
+                    {featured.description}
+                  </p>
+                )}
+                <div className="mt-8 max-w-md">
+                  <div className="flex justify-between text-sm text-ink-soft mb-2">
+                    <span className="font-semibold text-emerald-deep">Programme progress</span>
+                    <span>{featuredProgress}%</span>
                   </div>
-                </article>
-              ))}
-            </aside>
+                  <div
+                    className="h-2 bg-line"
+                    role="progressbar"
+                    aria-valuenow={featuredProgress}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <div className="h-full bg-emerald" style={{ width: `${featuredProgress}%` }} />
+                  </div>
+                </div>
+                <Link
+                  to={`/projects/${featured.slug}`}
+                  className="inline-block mt-8 text-emerald-deep font-semibold underline underline-offset-4"
+                >
+                  Read the full programme brief →
+                </Link>
+              </article>
+
+              <aside className="space-y-8">
+                {supporting.map((s) => (
+                  <article key={s.id} className="border-t border-line pt-6">
+                    <p className="eyebrow">{s.location || s.status || 'Programme'}</p>
+                    <h3 className="text-xl mt-1 mb-3 leading-snug">
+                      <Link to={`/projects/${s.slug}`} className="hover:text-emerald">{s.name}</Link>
+                    </h3>
+                    {s.description && (
+                      <p className="text-sm text-ink-soft mb-4 line-clamp-3">{s.description}</p>
+                    )}
+                    <Link
+                      to={`/projects/${s.slug}`}
+                      className="text-sm text-emerald-deep font-semibold underline underline-offset-4"
+                    >
+                      Read more →
+                    </Link>
+                  </article>
+                ))}
+              </aside>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* STATS BAND */}
       <section className="bg-emerald-deep text-parchment">
@@ -168,16 +173,25 @@ const Home = () => {
           <aside className="border-l border-line pl-8">
             <p className="eyebrow">Latest</p>
             <hr className="rule-gold" />
-            <ul className="space-y-6">
-              {news.map((n) => (
-                <li key={n.title}>
-                  <div className="text-xs uppercase tracking-widest text-ink-soft">{n.date}</div>
-                  <Link to={n.href} className="block mt-1 font-semibold text-emerald-deep hover:text-emerald">
-                    {n.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {latest.length === 0 ? (
+              <p className="text-ink-soft text-sm">No news posts yet.</p>
+            ) : (
+              <ul className="space-y-6">
+                {latest.map((n) => (
+                  <li key={n.slug}>
+                    <div className="text-xs uppercase tracking-widest text-ink-soft">
+                      {formatMonthYear(n.published_at || n.created_at)}
+                    </div>
+                    <Link
+                      to={`/news/${n.slug}`}
+                      className="block mt-1 font-semibold text-emerald-deep hover:text-emerald"
+                    >
+                      {n.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
             <Link to="/news" className="inline-block mt-6 text-sm underline underline-offset-4">
               All news →
             </Link>
