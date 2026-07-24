@@ -9,6 +9,7 @@ export default {
         sans: ['Hind', 'system-ui', 'sans-serif'],
       },
       colors: {
+        // Palette
         emerald: {
           deep: 'rgb(var(--color-emerald-deep) / <alpha-value>)',
           DEFAULT: 'rgb(var(--color-emerald) / <alpha-value>)',
@@ -20,12 +21,33 @@ export default {
           soft: 'rgb(var(--color-gold-soft) / <alpha-value>)',
         },
         parchment: 'rgb(var(--color-parchment) / <alpha-value>)',
+        paper: 'rgb(var(--surface-paper) / <alpha-value>)', // fixes previously-undefined bg-paper/text-paper
         ink: {
           DEFAULT: 'rgb(var(--color-ink) / <alpha-value>)',
           soft: 'rgb(var(--color-ink-soft) / <alpha-value>)',
         },
         line: 'rgb(var(--color-line) / <alpha-value>)',
-        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        surface: {
+          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
+          elevated: 'rgb(var(--surface-elevated) / <alpha-value>)',
+          muted: 'rgb(var(--surface-muted) / <alpha-value>)',
+          inverse: 'rgb(var(--surface-inverse) / <alpha-value>)',
+        },
+        content: {
+          DEFAULT: 'rgb(var(--content) / <alpha-value>)',
+          soft: 'rgb(var(--content-soft) / <alpha-value>)',
+          brand: 'rgb(var(--content-brand) / <alpha-value>)',
+          accent: 'rgb(var(--content-accent) / <alpha-value>)',
+          inverse: 'rgb(var(--content-inverse) / <alpha-value>)',
+        },
+        border: {
+          subtle: 'rgb(var(--border-subtle) / <alpha-value>)',
+          strong: 'rgb(var(--border-strong) / <alpha-value>)',
+          brand: 'rgb(var(--border-brand) / <alpha-value>)',
+          accent: 'rgb(var(--border-accent) / <alpha-value>)',
+          danger: 'rgb(var(--border-danger) / <alpha-value>)',
+        },
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
       },
       borderRadius: {
         sm: '8px',
@@ -33,39 +55,31 @@ export default {
         md: '12px',
         lg: '20px',
         xl: '32px',
+        field: '10px',
+        card: '16px',
+        image: '14px',
+        pill: '9999px',
       },
       boxShadow: {
+        hairline: '0 0 0 1px rgba(6, 78, 59, 0.06)',
         soft: '0 4px 24px -8px rgba(6, 78, 59, 0.10)',
         lift: '0 14px 40px -14px rgba(6, 78, 59, 0.18)',
+        overlay: '0 24px 64px -20px rgba(6, 78, 59, 0.28)',
+      },
+      backgroundImage: {
+        'gradient-emerald-fade': 'var(--gradient-emerald-fade)',
+        'gradient-gold-rule': 'var(--gradient-gold-rule)',
+        'gradient-hero-veil': 'var(--gradient-hero-veil)',
+      },
+      transitionTimingFunction: {
+        editorial: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+      transitionDuration: {
+        fast: '180ms',
+        base: '280ms',
+        slow: '480ms',
       },
     },
   },
-  plugins: [require("daisyui")],
-  daisyui: {
-    themes: [
-      {
-        hufida: {
-          primary: "#064e3b",
-          "primary-content": "#faf6ec",
-          secondary: "#0d7a5f",
-          "secondary-content": "#ffffff",
-          accent: "#c9a84c",
-          "accent-content": "#1a221e",
-          neutral: "#1a221e",
-          "neutral-content": "#faf6ec",
-          "base-100": "#faf6ec",
-          "base-200": "#f2ecd8",
-          "base-300": "#e0d9c4",
-          "base-content": "#1a221e",
-          info: "#0d7a5f",
-          success: "#0d7a5f",
-          warning: "#c9a84c",
-          error: "#9b2c2c",
-          "--rounded-box": "1rem",
-          "--rounded-btn": "9999px",
-          "--rounded-badge": "9999px",
-        },
-      },
-    ],
-  },
+  plugins: [],
 };

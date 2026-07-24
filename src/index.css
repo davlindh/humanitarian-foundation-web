@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   HUFIDA Design Tokens — Emerald Prestige (Editorial refresh)
-   Display: Instrument Serif  ·  Body: Hind
+   HUFIDA Design Tokens — Emerald Prestige (Editorial system)
+   Palette:  Emerald deep / Emerald / Gold / Parchment / Ink
+   Display:  Instrument Serif   ·   Body: Hind
    ========================================================================== */
 
 :root {
-  /* Palette — warmed */
+  /* ---------- Palette (raw) ---------- */
   --color-emerald-deep: 6 78 59;
   --color-emerald: 13 122 95;
   --color-emerald-soft: 209 232 222;
@@ -19,23 +20,70 @@
   --color-ink: 26 34 30;
   --color-ink-soft: 96 102 96;
   --color-line: 224 217 196;
-  --color-surface: 250 246 236;      /* warmer paper */
+  --color-surface: 250 246 236;
+  --color-danger: 155 44 44;
+  --color-danger-soft: 253 232 232;
+  --color-warning: 194 137 32;
 
-  /* Radius scale — generous, editorial */
+  /* ---------- Semantic surfaces ---------- */
+  --surface: var(--color-surface);
+  --surface-elevated: 253 250 240;
+  --surface-muted: var(--color-emerald-mist);
+  --surface-inverse: var(--color-emerald-deep);
+  --surface-paper: var(--color-parchment);
+
+  /* ---------- Semantic content ---------- */
+  --content: var(--color-ink);
+  --content-soft: var(--color-ink-soft);
+  --content-brand: var(--color-emerald-deep);
+  --content-accent: var(--color-gold);
+  --content-inverse: var(--color-parchment);
+
+  /* ---------- Semantic borders ---------- */
+  --border-subtle: var(--color-line);
+  --border-strong: var(--color-emerald-deep);
+  --border-brand: var(--color-emerald-deep);
+  --border-accent: var(--color-gold);
+  --border-danger: var(--color-danger);
+
+  /* ---------- Radius scale ---------- */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
   --radius-xl: 32px;
   --radius-pill: 9999px;
+  --radius-field: 10px;
+  --radius-card: 16px;
+  --radius-image: 14px;
 
-  /* Soft shadows replace hard borders */
+  /* ---------- Shadows ---------- */
+  --shadow-hairline: 0 0 0 1px rgba(6, 78, 59, 0.06);
   --shadow-soft: 0 4px 24px -8px rgba(6, 78, 59, 0.10);
   --shadow-lift: 0 14px 40px -14px rgba(6, 78, 59, 0.18);
+  --shadow-overlay: 0 24px 64px -20px rgba(6, 78, 59, 0.28);
+
+  /* ---------- Gradients ---------- */
+  --gradient-emerald-fade: linear-gradient(to bottom, rgb(var(--color-emerald-deep)), rgb(var(--color-surface)));
+  --gradient-gold-rule: linear-gradient(to right, rgb(var(--color-gold)), rgb(var(--color-gold-soft)));
+  --gradient-hero-veil: linear-gradient(180deg, rgba(6,78,59,0.15) 0%, rgba(6,78,59,0.55) 65%, rgba(6,78,59,0.75) 100%);
+
+  /* ---------- Motion ---------- */
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 180ms;
+  --duration-base: 280ms;
+  --duration-slow: 480ms;
+
+  /* ---------- Focus ---------- */
+  --focus-ring: 0 0 0 3px rgba(201, 168, 76, 0.35);
 }
 
+/* ==========================================================================
+   Base typography
+   ========================================================================== */
+
 html, body {
-  background: rgb(var(--color-surface));
-  color: rgb(var(--color-ink));
+  background: rgb(var(--surface));
+  color: rgb(var(--content));
   font-family: 'Hind', system-ui, -apple-system, sans-serif;
   font-weight: 400;
   line-height: 1.6;
@@ -47,11 +95,14 @@ h1, h2, h3, h4, h5, h6, .display {
   font-weight: 400;
   letter-spacing: -0.015em;
   line-height: 1.08;
-  color: rgb(var(--color-emerald-deep));
+  color: rgb(var(--content-brand));
 }
-
 h1 { font-size: clamp(2.25rem, 6vw, 4.25rem); }
 h2 { font-size: clamp(1.75rem, 4vw, 3rem); }
+
+/* ==========================================================================
+   Editorial atoms
+   ========================================================================== */
 
 .eyebrow {
   font-family: 'Hind', sans-serif;
@@ -59,13 +110,13 @@ h2 { font-size: clamp(1.75rem, 4vw, 3rem); }
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgb(var(--color-gold));
+  color: rgb(var(--content-accent));
 }
 
 .rule-gold {
   height: 2px;
   width: 2.5rem;
-  background: rgb(var(--color-gold));
+  background: rgb(var(--content-accent));
   border: 0;
   margin: 0.75rem 0 1.25rem;
   border-radius: 2px;
@@ -77,35 +128,259 @@ h2 { font-size: clamp(1.75rem, 4vw, 3rem); }
 .section { padding: 4rem 0; }
 @media (min-width: 768px) { .section { padding: 6rem 0; } }
 
-/* Focus ring */
-:where(a, button, [role="button"], input, select, textarea):focus-visible {
-  outline: 2px solid rgb(var(--color-gold));
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-
-/* Soft transition band from emerald headers into parchment */
 .emerald-fade-out {
-  background-image: linear-gradient(to bottom, rgb(var(--color-emerald-deep)), rgb(var(--color-surface)));
+  background-image: var(--gradient-emerald-fade);
   height: 4rem;
 }
 
 /* Prose article */
-.prose-hufida p { margin: 0 0 1.1em; color: rgb(var(--color-ink)); }
+.prose-hufida p { margin: 0 0 1.1em; color: rgb(var(--content)); }
 .prose-hufida a { color: rgb(var(--color-emerald)); text-decoration: underline; text-underline-offset: 3px; }
 .prose-hufida h2 { margin-top: 2.5rem; margin-bottom: 1rem; font-size: 2rem; }
 .prose-hufida h3 { margin-top: 2rem; margin-bottom: 0.75rem; font-size: 1.5rem; }
 
-/* Global softening: neutralize accidental hard-corner daisyUI overrides */
-.btn { border-radius: var(--radius-pill); }
-.btn-sm { border-radius: var(--radius-pill); }
-.card, .input, .select, .textarea { border-radius: var(--radius-md); }
-
 /* Tactile hover for editorial tiles */
 .tile-lift {
-  transition: transform 300ms ease-out, box-shadow 300ms ease-out;
+  transition: transform var(--duration-base) var(--ease-editorial),
+              box-shadow var(--duration-base) var(--ease-editorial);
 }
 .tile-lift:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lift);
 }
+
+/* ==========================================================================
+   Focus ring
+   ========================================================================== */
+
+:where(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   Native UI primitives — .hf-* class API used by React components
+   ========================================================================== */
+
+/* Buttons */
+.hf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: 'Hind', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  transition: background-color var(--duration-fast) var(--ease-editorial),
+              border-color var(--duration-fast) var(--ease-editorial),
+              color var(--duration-fast) var(--ease-editorial),
+              transform var(--duration-fast) var(--ease-editorial),
+              box-shadow var(--duration-fast) var(--ease-editorial);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.hf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.hf-btn--sm { padding: 0.45rem 0.9rem; font-size: 0.7rem; }
+.hf-btn--lg { padding: 0.9rem 1.75rem; font-size: 0.8rem; letter-spacing: 0.08em; }
+.hf-btn--block { width: 100%; }
+
+.hf-btn--primary {
+  background: rgb(var(--content-brand));
+  color: rgb(var(--content-inverse));
+  border-color: rgb(var(--content-brand));
+}
+.hf-btn--primary:hover:not(:disabled) {
+  background: rgb(var(--color-emerald));
+  border-color: rgb(var(--color-emerald));
+  box-shadow: var(--shadow-soft);
+}
+
+.hf-btn--secondary {
+  background: transparent;
+  color: rgb(var(--content-brand));
+  border-color: rgb(var(--border-subtle));
+}
+.hf-btn--secondary:hover:not(:disabled) {
+  border-color: rgb(var(--content-brand));
+  background: rgba(6, 78, 59, 0.04);
+}
+
+.hf-btn--ghost {
+  background: transparent;
+  color: rgb(var(--content));
+  border-color: rgb(var(--border-subtle));
+}
+.hf-btn--ghost:hover:not(:disabled) {
+  border-color: rgb(var(--content-accent));
+  color: rgb(var(--content-brand));
+}
+
+.hf-btn--link {
+  background: transparent;
+  color: rgb(var(--content-brand));
+  border-color: transparent;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0.25rem 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  border-radius: 0;
+}
+.hf-btn--link:hover:not(:disabled) { color: rgb(var(--color-emerald)); }
+
+.hf-btn--donate {
+  background: rgb(var(--content-accent));
+  color: rgb(var(--content));
+  border-color: rgb(var(--content-accent));
+}
+.hf-btn--donate:hover:not(:disabled) {
+  background: rgb(var(--color-gold-soft));
+  border-color: rgb(var(--color-gold-soft));
+  box-shadow: var(--shadow-soft);
+}
+
+.hf-btn--danger {
+  background: transparent;
+  color: rgb(var(--color-danger));
+  border-color: rgb(var(--color-danger));
+}
+.hf-btn--danger:hover:not(:disabled) {
+  background: rgb(var(--color-danger));
+  color: rgb(var(--content-inverse));
+}
+
+/* Links */
+.hf-link {
+  color: rgb(var(--content-brand));
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  transition: color var(--duration-fast) var(--ease-editorial);
+}
+.hf-link:hover { color: rgb(var(--color-emerald)); }
+.hf-link--muted { color: rgb(var(--content-soft)); text-decoration: none; }
+.hf-link--muted:hover { color: rgb(var(--content-brand)); }
+.hf-link--standalone::after { content: " \2192"; }
+
+/* Cards */
+.hf-card {
+  background: rgb(var(--surface-elevated));
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-hairline);
+  transition: box-shadow var(--duration-base) var(--ease-editorial),
+              transform var(--duration-base) var(--ease-editorial);
+}
+.hf-card--paper { background: rgb(var(--surface-paper)); }
+.hf-card--inverse { background: rgb(var(--surface-inverse)); color: rgb(var(--content-inverse)); }
+.hf-card--hoverable:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* Fields */
+.hf-field-label {
+  display: block;
+  font-family: 'Hind', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(var(--content-soft));
+  margin-bottom: 0.4rem;
+}
+.hf-input, .hf-select, .hf-textarea {
+  width: 100%;
+  background: rgb(var(--surface-elevated));
+  border: 1px solid rgb(var(--border-subtle));
+  border-radius: var(--radius-field);
+  padding: 0.7rem 0.9rem;
+  font-family: 'Hind', sans-serif;
+  font-size: 0.95rem;
+  color: rgb(var(--content));
+  transition: border-color var(--duration-fast) var(--ease-editorial),
+              box-shadow var(--duration-fast) var(--ease-editorial);
+}
+.hf-input::placeholder, .hf-textarea::placeholder { color: rgb(var(--content-soft) / 0.7); }
+.hf-input:focus, .hf-select:focus, .hf-textarea:focus {
+  outline: none;
+  border-color: rgb(var(--content-brand));
+  box-shadow: var(--focus-ring);
+}
+.hf-input--error, .hf-select--error, .hf-textarea--error {
+  border-color: rgb(var(--color-danger));
+}
+
+/* Badges */
+.hf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  font-family: 'Hind', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgb(var(--border-subtle));
+  color: rgb(var(--content-soft));
+  background: transparent;
+}
+.hf-badge--brand { color: rgb(var(--content-brand)); border-color: rgb(var(--content-brand)); }
+.hf-badge--gold  { color: rgb(var(--content)); border-color: rgb(var(--content-accent)); background: rgb(var(--color-gold-soft) / 0.4); }
+.hf-badge--success { color: rgb(var(--content-brand)); border-color: rgb(var(--color-emerald)); background: rgb(var(--color-emerald-soft) / 0.5); }
+.hf-badge--warning { color: rgb(var(--color-warning)); border-color: rgb(var(--color-warning)); background: rgb(var(--color-gold-soft) / 0.3); }
+.hf-badge--danger  { color: rgb(var(--color-danger)); border-color: rgb(var(--color-danger)); background: rgb(var(--color-danger-soft)); }
+
+/* Dividers */
+.hf-divider { border: 0; border-top: 1px solid rgb(var(--border-subtle)); margin: 1.5rem 0; }
+.hf-divider--soft { border-top-color: rgb(var(--border-subtle) / 0.5); }
+.hf-divider--rule { border: 0; height: 2px; width: 2.5rem; background: rgb(var(--content-accent)); border-radius: 2px; margin: 0.75rem 0 1.25rem; }
+
+/* ==========================================================================
+   Legacy compatibility layer — maps daisyUI class API to token primitives
+   so daisyUI can be dropped without touching every call site.
+   ========================================================================== */
+
+.btn { @apply hf-btn; }
+.btn-sm { @apply hf-btn--sm; }
+.btn-lg { @apply hf-btn--lg; }
+.btn-block { @apply hf-btn--block; }
+.btn-primary { @apply hf-btn--primary; }
+.btn-secondary { @apply hf-btn--secondary; }
+.btn-accent { @apply hf-btn--donate; }
+.btn-ghost { @apply hf-btn--ghost; }
+.btn-outline { @apply hf-btn--secondary; }
+
+.input, .select, .textarea { @apply hf-input; }
+.input-bordered { border: 1px solid rgb(var(--border-subtle)); }
+.form-control { display: block; width: 100%; }
+.label-text {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(var(--content-soft));
+}
+.card { @apply hf-card; }
+.bg-base-100 { background: rgb(var(--surface-elevated)); }
+.bg-base-200 { background: rgb(var(--surface-paper)); }
+.bg-base-300 { background: rgb(var(--surface-muted)); }
+.text-error { color: rgb(var(--color-danger)); }
+.border-error { border-color: rgb(var(--color-danger)); }
+.bg-error\/5 { background: rgb(var(--color-danger) / 0.05); }
+
+/* ==========================================================================
+   react-slick dot theming
+   ========================================================================== */
+.slick-dots li button:before { color: rgb(var(--content-accent)); opacity: 0.5; }
+.slick-dots li.slick-active button:before { color: rgb(var(--content-accent)); opacity: 1; }
