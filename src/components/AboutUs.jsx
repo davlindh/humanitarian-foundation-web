@@ -131,7 +131,12 @@ const AboutUs = () => {
                   {p.logo_url ? (
                     <img src={p.logo_url} alt={p.name} className="max-h-20 object-contain" />
                   ) : (
-                    <span className="font-display text-xl text-emerald-deep">{p.name}</span>
+                    <span
+                      aria-hidden="true"
+                      className="w-16 h-16 flex items-center justify-center bg-parchment/60 border border-line font-display text-xl text-emerald-deep tracking-wider"
+                    >
+                      {p.name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
+                    </span>
                   )}
                 </div>
                 <h3 className="text-lg mt-4 mb-2">
