@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const givingLevels = [
   { amount: 10, description: 'School supplies for one child, for a year.' },
@@ -7,22 +8,56 @@ const givingLevels = [
   { amount: 100, description: 'Foundation contribution to a district programme.' },
 ];
 
-const volunteerRoles = [
+const impactStats = [
   {
-    title: 'Community Outreach',
-    description: 'Support field teams during programme launches and community consultations in East and Central Africa.',
+    figure: '42',
+    label: 'Districts reached',
+    body: 'Primary care, WASH and education programmes running across East and Central Africa.',
   },
   {
-    title: 'Event & Programme Coordination',
-    description: 'Help organise fundraising events, donor briefings, and partner visits from a home base or in-country.',
+    figure: '$1.4M',
+    label: 'Programme spend',
+    body: 'Every dollar tied to a published budget and an independently audited outcome.',
   },
   {
-    title: 'Fundraising',
-    description: 'Run a campaign for a specific programme — schools, boreholes, or maternity ward equipment.',
+    figure: '18k',
+    label: 'Lives supported',
+    body: 'Patients treated, students enrolled, households on clean water in the last cycle.',
+  },
+];
+
+const engagementTiles = [
+  {
+    eyebrow: 'Finances',
+    title: 'Donate',
+    body: 'One-time or monthly gifts fund a specific programme with a public budget. Every gift is receipted.',
+    action: 'Make a contribution',
+    href: '#donate',
+    isRoute: false,
   },
   {
-    title: 'Communications',
-    description: 'Contribute writing, translation, or social media work to help programmes reach new supporters.',
+    eyebrow: 'Presence',
+    title: 'Volunteer',
+    body: 'Field outreach, event coordination, fundraising and communications — remote or in-country.',
+    action: 'Email the team',
+    href: 'mailto:volunteer@hufida.org',
+    isRoute: false,
+  },
+  {
+    eyebrow: 'Collaboration',
+    title: 'Partner',
+    body: 'Institutional, corporate and coalition partnerships that align mandates with delivery on the ground.',
+    action: 'See current partners',
+    href: '/partners',
+    isRoute: true,
+  },
+  {
+    eyebrow: 'Community',
+    title: 'Events',
+    body: 'Donor briefings, community days and partner visits. Small, deliberate, on the record.',
+    action: 'View the diary',
+    href: '#events',
+    isRoute: false,
   },
 ];
 
@@ -30,7 +65,7 @@ const upcomingEvents = [
   {
     title: 'Annual Programme Briefing',
     date: 'December 15, 2026',
-    description: 'A closed briefing for major donors and partners on the year\'s programme results and next cycle.',
+    description: "A closed briefing for major donors and partners on the year's programme results and next cycle.",
   },
   {
     title: 'Community Clean-up',
@@ -38,6 +73,25 @@ const upcomingEvents = [
     description: 'A public volunteer day working with partner councils on riverbank restoration.',
   },
 ];
+
+const TileInner = ({ tile }) => (
+  <>
+    <div>
+      <span className="block eyebrow mb-8 group-hover:text-gold transition-colors">
+        {tile.eyebrow}
+      </span>
+      <h3 className="font-display text-3xl uppercase text-emerald-deep mb-4 group-hover:text-parchment transition-colors">
+        {tile.title}
+      </h3>
+      <p className="text-ink-soft leading-relaxed mb-8 group-hover:text-parchment/80 transition-colors">
+        {tile.body}
+      </p>
+    </div>
+    <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-deep group-hover:text-gold transition-colors">
+      {tile.action} <span aria-hidden className="text-lg leading-none">&rarr;</span>
+    </span>
+  </>
+);
 
 const GetInvolved = () => {
   const [donation, setDonation] = useState('');
@@ -49,34 +103,65 @@ const GetInvolved = () => {
     console.log('Donation intent', { donation, recurring });
   };
 
+  const tileClass =
+    'group bg-paper p-8 md:p-10 flex flex-col justify-between min-h-[280px] hover:bg-emerald-deep transition-colors duration-500';
+
   return (
     <div className="space-y-24">
-      {/* Impact figure */}
+      {/* Impact strip */}
       <section>
-        <p className="eyebrow">Your Support</p>
-        <hr className="rule-gold" />
-        <h2 className="text-3xl md:text-4xl mb-8">What contributions have funded so far.</h2>
-        <figure className="border border-line bg-parchment/40 p-6">
-          <img
-            src="/images/infographics/support-impact-infographic.png"
-            alt="Impact of donor and volunteer contributions"
-            className="w-full h-auto"
-          />
-        </figure>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-line pb-8">
+          <div className="max-w-xl">
+            <p className="eyebrow mb-4">The harvest of your support</p>
+            <h2 className="font-display text-3xl md:text-5xl uppercase text-emerald-deep leading-tight">
+              What contributions have funded so far
+            </h2>
+          </div>
+          <p className="max-w-xs text-ink-soft leading-relaxed">
+            Your investment goes beyond a donation — it underwrites infrastructure,
+            sustains families, and keeps programmes accountable.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-12">
+          {impactStats.map((s) => (
+            <div key={s.label} className="pt-8 border-t border-gold">
+              <div className="font-display text-6xl text-emerald-deep mb-2">{s.figure}</div>
+              <p className="uppercase tracking-tight font-semibold text-emerald">{s.label}</p>
+              <p className="mt-4 text-sm text-ink-soft leading-relaxed">{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Engagement grid */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-px bg-line border border-line">
+        {engagementTiles.map((tile) =>
+          tile.isRoute ? (
+            <Link key={tile.title} to={tile.href} className={tileClass}>
+              <TileInner tile={tile} />
+            </Link>
+          ) : (
+            <a key={tile.title} href={tile.href} className={tileClass}>
+              <TileInner tile={tile} />
+            </a>
+          )
+        )}
       </section>
 
       {/* Donate */}
-      <section className="border-t border-line pt-16">
+      <section id="donate" className="scroll-mt-24 border-t border-line pt-16">
         <p className="eyebrow">Donate</p>
         <hr className="rule-gold" />
-        <h2 className="text-3xl md:text-4xl mb-10">Fund a programme directly.</h2>
+        <h2 className="font-display text-3xl md:text-4xl uppercase text-emerald-deep mb-10">
+          Fund a programme directly.
+        </h2>
 
         <div className="grid md:grid-cols-2 gap-10 items-start">
           <div>
             <p className="text-ink-soft leading-relaxed mb-8">
-              Every contribution goes into a specific programme with a published
-              budget and audited outcomes. Choose an amount, or set a monthly
-              recurring gift.
+              Choose an amount below, or set a monthly recurring gift. Each level
+              maps to a specific line item in a published programme budget.
             </p>
             <ul className="divide-y divide-line border-y border-line">
               {givingLevels.map((g) => (
@@ -137,29 +222,13 @@ const GetInvolved = () => {
         </div>
       </section>
 
-      {/* Volunteer */}
-      <section className="border-t border-line pt-16">
-        <p className="eyebrow">Volunteer</p>
-        <hr className="rule-gold" />
-        <h2 className="text-3xl md:text-4xl mb-10">Roles we're recruiting for.</h2>
-        <div className="grid md:grid-cols-2 gap-6">
-          {volunteerRoles.map((r) => (
-            <article key={r.title} className="border border-line p-8">
-              <h3 className="text-xl mb-3">{r.title}</h3>
-              <p className="text-ink-soft leading-relaxed">{r.description}</p>
-            </article>
-          ))}
-        </div>
-        <p className="mt-8 text-ink-soft">
-          Interested? Email <a href="mailto:volunteer@hufida.org" className="text-emerald-deep underline underline-offset-4">volunteer@hufida.org</a> with your background and availability.
-        </p>
-      </section>
-
       {/* Events */}
-      <section className="border-t border-line pt-16">
+      <section id="events" className="scroll-mt-24 border-t border-line pt-16">
         <p className="eyebrow">Upcoming events</p>
         <hr className="rule-gold" />
-        <h2 className="text-3xl md:text-4xl mb-10">Diary.</h2>
+        <h2 className="font-display text-3xl md:text-4xl uppercase text-emerald-deep mb-10">
+          Diary.
+        </h2>
         <div className="divide-y divide-line border-y border-line">
           {upcomingEvents.map((e) => (
             <article key={e.title} className="py-8 grid md:grid-cols-[180px_1fr] gap-6">
