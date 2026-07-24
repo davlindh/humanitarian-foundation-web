@@ -1,56 +1,46 @@
+## Admin upgrade — dashboard, uploads, publishing, public wiring
 
-# Admin pages — audit & plan
+### 1. AdminHome dashboard
+Turn the current link grid into a real overview.
+- Top strip: counts for Projects, Tasks, Milestones, Resources, Profiles, Group profiles, News (published / drafts).
+- "Recent activity" panel: last 10 rows from `admin_activity_log` with actor, action, table, record name, timestamp — click-through to `/admin/activity`.
+- "Needs attention" panel: news drafts, news scheduled for the future, tasks without a project.
+- Quick-create buttons that jump to each resource page with the inline editor open.
 
-## What's there today
+### 2. Media uploads (covers & avatars)
+- Create a **public** Storage bucket `media` with RLS: public read, admin-only write/update/delete.
+- New shared `ImageUploader` component used by:
+  - News manager → `cover_image`
+  - Projects manager → new `cover_image` column
+  - Profiles manager → `avatar_url`
+  - Group profiles manager → new `logo_url` column
+- Uploader shows current image, "Upload" and "Remove" actions, stores the public URL in the row.
+- Small schema migration: add `projects.cover_image text`, `group_profiles.logo_url text`.
 
-- `/admin` shell (`AdminLayout`, `AdminHome`) plus finished screens: `AdminRoles`, `AdminActivity`. Both are polished and themed.
-- Six CRUD resources (`projects`, `tasks`, `milestones`, `resources`, `profiles`, `group_profiles`) each have a **List** and a separate **New** page.
-- All twelve list/form components are the original scaffold: no styling (plain `<ul>`, unstyled inputs, no design tokens), no toasts, no validation, **no edit, no delete**, no empty/loading/error states beyond `console.error`. Forms don't reset or navigate after submit.
-- `ProfileList`/`Form` only reads `name` + `email`, but the real `profiles` table has 7 columns (bio, role, avatar, etc.) that are invisible in the UI.
-- **No admin UI for `news_posts`** even though the table exists, is seeded, and drives the public `/news` page.
-- `ProtectedRoute` only checks `user`, not role. Any signed-in viewer/editor can reach `/admin` and see forms that then silently fail against admin-only RLS.
-- Forms POST but never show success/failure to the user; lists don't refresh after a create.
+### 3. News publishing workflow
+Refit `/admin/news` around a real editorial flow.
+- Status model built on existing `is_published` + `published_at`: **Draft** (not published), **Scheduled** (published + future date), **Live** (published + past date).
+- List filter tabs: All / Drafts / Scheduled / Live, plus search on title.
+- Editor changes: slug auto-generated from title with manual override + uniqueness check; "Save draft", "Publish now", "Schedule…" actions; "Copy public link" button; validation for required fields.
+- Public `/news` and post pages read only Live posts (published + `published_at <= now()`); admins can preview any post via `?preview=<id>` (RLS already allows admin read).
 
-## Goal
+### 4. Wire public pages to the database
+Replace hardcoded content with live reads. All queries are anon-safe SELECTs guarded by new public-read RLS policies (writes stay admin-only).
+- `/news` + individual post view → `news_posts` (Live only).
+- `/projects` list + featured strip on home → `projects` (+ `milestones` for progress where present).
+- `/about-us` team roster → `profiles`; partners strip → `group_profiles`.
+- Loading skeletons and empty states in the Emerald Prestige style; keep existing imagery as fallbacks when a row has no cover/avatar.
 
-Turn `/admin/*` into a coherent editorial workspace: role-gated entry, one screen per resource with list + inline create/edit + delete, News manager included, consistent Emerald Prestige styling.
+### 5. RLS additions (writes stay admin-only)
+Add `GRANT SELECT ... TO anon` and a public-read policy on `projects`, `milestones`, `profiles`, `group_profiles`, plus a `news_posts` policy scoped to Live rows. Existing admin-only insert/update/delete policies remain untouched. Re-run the linter after.
 
-## Plan
+### Technical notes
+- Storage bucket created via `supabase--storage_create_bucket` (not SQL); object policies via migration on `storage.objects`.
+- Uploader uses `supabase.storage.from('media').upload(...)` with a path like `covers/<uuid>.<ext>` and reads back the public URL.
+- Dashboard counts use `select('*', { count: 'exact', head: true })` per table in parallel.
+- Slug uniqueness: check via `select id from news_posts where slug = ? and id <> ?` before save.
+- No changes to `AdminRoles`, `AdminActivity`, or the audit triggers.
 
-### 1. Role-gated admin shell
-- Extend `ProtectedRoute` (or add `AdminRoute`) to also verify `private.has_role(auth.uid(), 'admin')` via RPC; non-admin authenticated users get a "You need admin access" screen instead of a broken form.
-- `AdminLayout` shows the caller's role next to their email.
-
-### 2. Shared admin primitives (`src/pages/admin/_shared/`)
-- `ResourcePage` — themed page shell: eyebrow, `rule-gold`, heading, "New" toggle, list container.
-- `AdminTable` — bordered rows with name/meta, edit + delete actions, empty state, loading skeleton, error banner.
-- `AdminField` — labeled input/textarea/select using `bg-parchment/40`, `border-line`, focus-gold styling.
-- `useCrud(table, selectCols)` — hook wrapping list/insert/update/delete with toast + refresh.
-- `confirmDelete()` — small modal helper.
-
-### 3. Rebuild the six resources
-For each of `projects`, `tasks`, `milestones`, `resources`, `profiles`, `group_profiles`:
-- Merge `XxxList` + `XxxForm` into a single `/admin/<resource>` screen with inline "New / Edit" panel (retire the separate `/new` route).
-- Surface the real columns that exist in the DB (e.g. project `status`, task `due_date` + `status`, milestone `target_date`, resource `url` + `type`, profile `role` + `bio` + `avatar_url`, group_profile `type` + `website`).
-- Add edit + delete actions with confirmation and optimistic refresh.
-- Toast on success/error.
-
-### 4. Add News manager
-- New route `/admin/news` (`NewsList`/inline editor).
-- Fields: `title`, `slug`, `excerpt`, `body`, `category` (blog/press), `cover_image`, `published_at`, `is_published`.
-- Slug auto-derived from title with manual override.
-
-### 5. Navigation & housekeeping
-- Add "News" card to `AdminHome` and link in `AdminLayout` sidebar.
-- Remove `/admin/<resource>/new` routes from `src/App.jsx` (inline editor replaces them).
-- Delete the twelve now-unused legacy list/form components.
-
-## Out of scope
-- No schema changes (all needed columns already exist).
-- No changes to `AdminRoles` or `AdminActivity` — they're already done.
-- Public marketing pages are untouched; wiring `/news` to the DB stays separate work.
-
-## Technical notes
-- Role check RPC: `supabase.rpc('has_role', { _user_id, _role: 'admin' })` — already exposed through the `private.has_role` wrapper.
-- All writes go directly through the client; RLS + the existing `log_admin_activity` triggers cover authz and audit.
-- Toasts: use existing daisyUI/shadcn toast primitive already in the project (fall back to a tiny inline notice component if none is wired).
+### Out of scope
+- Rich-text editor for news body (still textarea/Markdown).
+- Editor-role permissions, bulk ops/CSV export, i18n.
