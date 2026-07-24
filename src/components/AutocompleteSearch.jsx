@@ -37,14 +37,14 @@ const AutocompleteSearch = () => {
         placeholder="Search..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="input input-bordered w-full"
+        className="hf-input"
       />
       {suggestions.length > 0 && (
-        <ul className="absolute z-10 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg">
+        <ul className="absolute z-10 w-full bg-surface-elevated border border-border-subtle mt-1 rounded-card shadow-overlay overflow-hidden">
           {suggestions.map((suggestion, index) => (
             <li
               key={index}
-              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              className="px-4 py-2 hover:bg-surface-muted cursor-pointer transition-fast ease-editorial"
               onClick={() => {
                 setSearchTerm(suggestion);
                 handleSearch(suggestion);

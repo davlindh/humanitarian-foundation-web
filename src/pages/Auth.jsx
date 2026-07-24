@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../auth/AuthContext';
+import { Button, Link, Field, Input, Divider } from '../components/ui';
 
 const AuthPage = () => {
   const [mode, setMode] = useState('signin');
@@ -43,70 +44,62 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-[80dvh] bg-parchment/40">
+    <div className="min-h-[80dvh] bg-surface-paper/40">
       <div className="container-wide py-16">
-        <div className="max-w-md mx-auto bg-base-100 border border-line shadow-sm p-8">
+        <div className="max-w-md mx-auto bg-surface-elevated rounded-card shadow-soft p-8">
           <p className="eyebrow">Team access</p>
-          <hr className="rule-gold" />
-          <h1 className="text-3xl mb-2">
+          <Divider variant="rule" />
+          <h1 className="font-serif text-3xl mb-2">
             {mode === 'signin' ? 'Sign in' : 'Create account'}
           </h1>
-          <p className="text-ink-soft mb-6 text-sm">
+          <p className="text-content-soft mb-6 text-sm">
             Admin area for HUFIDA staff and program coordinators.
           </p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <label className="form-control w-full">
-              <span className="label-text mb-1 font-medium">Email</span>
-              <input
+          <form onSubmit={handleSubmit} className="space-y-1">
+            <Field label="Email" required>
+              <Input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input input-bordered w-full"
                 autoComplete="email"
               />
-            </label>
-            <label className="form-control w-full">
-              <span className="label-text mb-1 font-medium">Password</span>
-              <input
+            </Field>
+            <Field label="Password" required>
+              <Input
                 type="password"
                 required
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input input-bordered w-full"
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               />
-            </label>
+            </Field>
             {msg && (
               <div
                 role="alert"
-                className={`text-sm p-3 border ${
+                className={`text-sm p-3 rounded-md border ${
                   msg.type === 'error'
-                    ? 'border-error text-error bg-error/5'
-                    : 'border-emerald text-emerald-deep bg-emerald-soft/40'
+                    ? 'border-danger text-danger bg-danger/5'
+                    : 'border-emerald text-content-brand bg-emerald-soft/40'
                 }`}
               >
                 {msg.text}
               </div>
             )}
-            <button
-              type="submit"
-              disabled={busy}
-              className="btn btn-primary w-full"
-            >
-              {busy ? '...' : mode === 'signin' ? 'Sign in' : 'Create account'}
-            </button>
+            <Button type="submit" disabled={busy} block>
+              {busy ? '…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            </Button>
           </form>
-          <div className="mt-6 text-sm text-ink-soft flex justify-between">
+          <div className="mt-6 text-sm text-content-soft flex justify-between">
             <button
               type="button"
               onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-              className="underline"
+              className="hf-link hf-link--muted"
             >
               {mode === 'signin' ? 'Need an account?' : 'Already have an account?'}
             </button>
-            <Link to="/" className="underline">Back to site</Link>
+            <Link to="/" variant="muted">Back to site</Link>
           </div>
         </div>
       </div>
