@@ -10,7 +10,7 @@ const links = [
   { to: '/admin/milestones', label: 'Milestones' },
   { to: '/admin/resources', label: 'Resources' },
   { to: '/admin/profiles', label: 'Profiles' },
-  { to: '/admin/group-profiles', label: 'Group profiles' },
+  { to: '/admin/group-profiles', label: 'Partners' },
   { to: '/admin/news', label: 'News' },
   { to: '/admin/roles', label: 'Roles' },
   { to: '/admin/activity', label: 'Activity log' },
