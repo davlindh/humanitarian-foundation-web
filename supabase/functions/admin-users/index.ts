@@ -43,12 +43,14 @@ Deno.serve(async (req) => {
   if (userErr || !userData.user) return json({ error: "Invalid session" }, 401);
   const callerId = userData.user.id;
 
-  const { data: isAdmin, error: roleErr } = await userClient.rpc("has_role", {
-    _user_id: callerId,
-    _role: "admin",
-  });
+  const { data: adminRow, error: roleErr } = await userClient
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", callerId)
+    .eq("role", "admin")
+    .maybeSingle();
   if (roleErr) return json({ error: roleErr.message }, 500);
-  if (!isAdmin) return json({ error: "Admin role required" }, 403);
+  if (!adminRow) return json({ error: "Admin role required" }, 403);
 
   // Service-role client for privileged reads/writes.
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
