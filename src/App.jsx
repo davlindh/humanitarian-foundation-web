@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
-import ProtectedRoute from './auth/ProtectedRoute';
+import AdminRoute from './auth/AdminRoute';
 import { initGA } from './utils/analytics';
 
 import NavigationBar from './components/NavigationBar';
@@ -29,18 +29,13 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminHome from './pages/admin/AdminHome';
 import AdminRoles from './pages/admin/AdminRoles';
 import AdminActivity from './pages/admin/AdminActivity';
-import ProjectList from './components/ProjectList';
-import ProjectForm from './components/ProjectForm';
-import TaskList from './components/TaskList';
-import TaskForm from './components/TaskForm';
-import MilestoneList from './components/MilestoneList';
-import MilestoneForm from './components/MilestoneForm';
-import ResourceList from './components/ResourceList';
-import ResourceForm from './components/ResourceForm';
-import ProfileList from './components/ProfileList';
-import ProfileForm from './components/ProfileForm';
-import GroupProfileList from './components/GroupProfileList';
-import GroupProfileForm from './components/GroupProfileForm';
+import ProjectsAdmin from './pages/admin/ProjectsAdmin';
+import TasksAdmin from './pages/admin/TasksAdmin';
+import MilestonesAdmin from './pages/admin/MilestonesAdmin';
+import ResourcesAdmin from './pages/admin/ResourcesAdmin';
+import ProfilesAdmin from './pages/admin/ProfilesAdmin';
+import GroupProfilesAdmin from './pages/admin/GroupProfilesAdmin';
+import NewsAdmin from './pages/admin/NewsAdmin';
 
 const SiteChrome = ({ children }) => (
   <div className="min-h-dvh flex flex-col bg-surface">
@@ -77,28 +72,23 @@ function App() {
 
             <Route path="/auth" element={<AuthPage />} />
 
-            {/* Admin — auth-gated */}
+            {/* Admin — admin role required */}
             <Route
               path="/admin"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <AdminLayout />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             >
               <Route index element={<AdminHome />} />
-              <Route path="projects" element={<ProjectList />} />
-              <Route path="projects/new" element={<ProjectForm />} />
-              <Route path="tasks" element={<TaskList />} />
-              <Route path="tasks/new" element={<TaskForm />} />
-              <Route path="milestones" element={<MilestoneList />} />
-              <Route path="milestones/new" element={<MilestoneForm />} />
-              <Route path="resources" element={<ResourceList />} />
-              <Route path="resources/new" element={<ResourceForm />} />
-              <Route path="profiles" element={<ProfileList />} />
-              <Route path="profiles/new" element={<ProfileForm />} />
-              <Route path="group-profiles" element={<GroupProfileList />} />
-              <Route path="group-profiles/new" element={<GroupProfileForm />} />
+              <Route path="projects" element={<ProjectsAdmin />} />
+              <Route path="tasks" element={<TasksAdmin />} />
+              <Route path="milestones" element={<MilestonesAdmin />} />
+              <Route path="resources" element={<ResourcesAdmin />} />
+              <Route path="profiles" element={<ProfilesAdmin />} />
+              <Route path="group-profiles" element={<GroupProfilesAdmin />} />
+              <Route path="news" element={<NewsAdmin />} />
               <Route path="roles" element={<AdminRoles />} />
               <Route path="activity" element={<AdminActivity />} />
             </Route>
