@@ -1,0 +1,1 @@
+ALTER TABLE public.group_profiles ADD COLUMN IF NOT EXISTS tier text;
