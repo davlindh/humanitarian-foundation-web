@@ -1,23 +1,14 @@
 ## Problem
 
-Two mismatches on the Partners surface:
+On About Us, each partner card renders the name twice: once as the logo fallback text and again as the heading below. So partners without a `logo_url` show "TGI / TGI", "Great Lakes WASH Coalition / Great Lakes WASH Coalition", etc.
 
-1. **`/partners` is hard-coded.** `src/pages/Partners.jsx` renders a static array (District Health Ministries, Great Lakes WASH Coalition, East African Education Trust, Independent Auditors Africa) and never touches the DB. The admin at `/admin/group-profiles` — which the About page already reads from — holds the real records (The Grassroot Institute, Great Lakes WASH Coalition, District Education Working Group). So the public Partners page and the admin/About list disagree.
-2. **Admin page still says "Group profiles"** in the H1 (`GroupProfilesAdmin.jsx` `title="Group profiles"`), even though the sidebar, dashboard tile, page eyebrow, and public site all use "Partners".
-
-The hard-coded array also uses a `tier` label ("Government / Coalition / Foundation / Assurance") that has no matching column in `group_profiles`, so we can't render that classification from the DB today.
+Source: `src/components/AboutUs.jsx`, the "Partners & Sponsors" card renders `p.name` inside a `<span>` when `p.logo_url` is missing, then prints `p.name` again as the `<h3>`.
 
 ## Fix
 
-- **DB:** add nullable `tier text` column to `public.group_profiles` (migration). No backfill — admins fill it in per record.
-- **`src/pages/Partners.jsx`:** remove the static array; fetch `group_profiles` ordered by `name`, render each card with `tier` as the eyebrow (fallback: "Partner"), name (linked to `website` when present), and `description`. Keep the existing PageHeader copy and the two-column editorial grid. Handle loading and empty states in the site's tone.
-- **`src/pages/admin/GroupProfilesAdmin.jsx`:**
-  - Change `title="Group profiles"` → `title="Partners"`.
-  - Add a `Tier` text field to the form and include it in `defaults` and `toPayload`.
-  - Show the tier in the row meta line (e.g. `Coalition · updated 2026-07-24`).
+In `src/components/AboutUs.jsx`, replace the text-name fallback with a non-duplicating placeholder:
 
-## Out of scope
+- If `logo_url` exists: render the `<img>` as today.
+- Else: render initials (first letter of up to two words of `p.name`, uppercased) inside the same 24-height slot, styled as a subtle monogram (parchment tile, emerald type). This preserves layout rhythm without repeating the name.
 
-- Renaming the `group_profiles` table or the `/admin/group-profiles` route.
-- Changes to About page's "Partners & Sponsors" block — it already reads live data and works.
-- Turning `tier` into an enum. Free-text keeps admins flexible; we can tighten later if needed.
+Keep the `<h3>` name/link below unchanged. No other pages or DB changes.
